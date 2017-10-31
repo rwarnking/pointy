@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <iostream>
-#include <cstring>
+#include <string>
 #include <exception>
 #include <fstream>
 
@@ -107,6 +107,10 @@ private:
 	void WritePoints(bool solution);
 
 	int GetBoxCount();
+	bool Intersects(Box p1, Box p2);
+	bool Intersects(int one, int two);
+	int IsFeasible();
+
 	void WriteToConsole();
 
 	int point_count;

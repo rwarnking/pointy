@@ -14,7 +14,7 @@ int main(int argc, char **argv)
 
 	if (argc == 3)
 	{
-		if (strcmp(argv[1], "-eval") == 0 )
+		if (string(argv[1]).compare("-eval") == 0 )
 		{
 			prob.CheckSolution(argv[2]);
 		}
@@ -26,7 +26,7 @@ int main(int argc, char **argv)
 	}
 	else if (argc == 5)
 	{
-		if (strcmp(argv[1], "-in") == 0 && strcmp(argv[3], "-out") == 0)
+		if (string(argv[1]).compare("-in") == 0 && string(argv[3]).compare("-out") == 0)
 		{
 			prob.GenerateSolution(argv[2], argv[4]);
 		}
