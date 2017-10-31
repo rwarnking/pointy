@@ -6,6 +6,8 @@
 #include <string>
 #include <exception>
 #include <fstream>
+#include <algorithm>
+#include <chrono>
 
 class Problem
 {
@@ -103,18 +105,17 @@ private:
 	void ReadPoints(std::string content, bool solution=true);
 
 	void WriteFile(char *filename);
-	void WritePointCount();
-	void WritePoints(bool solution);
 
-	int GetBoxCount();
+	int GetBoxCount(short which=0);
 	bool Intersects(Box p1, Box p2);
 	bool Intersects(int one, int two);
 	int IsFeasible();
+	bool Generator(int index=0);
 
 	void WriteToConsole();
 
 	int point_count;
-	std::vector<Point> points;
+	std::vector<Point> points, opt;
 };
 
 #endif

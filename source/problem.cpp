@@ -6,12 +6,16 @@ Problem::Problem()
 {
     point_count = 0;
     points = vector<Point>();
+    opt = vector<Point>();
 }
 
 Problem::~Problem()
 {
     points.clear();
     points.shrink_to_fit();
+
+    opt.clear();
+    opt.shrink_to_fit();
 }
 
 // Einlesen
@@ -31,7 +35,7 @@ void Problem::ReadFile(char *filename)
             size_t pos = ReadPointCount(content);
 
             // Read all points
-            ReadPoints(content.substr(pos+1, string::npos));
+            ReadPoints(content.substr(pos+1, string::npos), false);
         }
         else
         {
@@ -163,14 +167,6 @@ void Problem::WriteFile(char *filename)
     }
 }
 
-void Problem::WritePointCount()
-{
-}
-
-void Problem::WritePoints(bool solution)
-{
-}
-
 void Problem::CheckSolution(char *infile)
 {
     ReadFile(infile);
@@ -192,75 +188,67 @@ void Problem::GenerateSolution(char *infile, char *outfile)
 {
     ReadFile(infile);
 
+    // Take time
+    chrono::steady_clock::time_point start = chrono::steady_clock::now();
 
-    // Save optimal solution
+    // Sort from smallest to biggest box
+    sort(points.begin(), points.end(), [](Point &p1, Point &p2) { return p1.box.length * p1.box.height < p2.box.length * p2.box.height; });
+    Generator();
 
-
-    // Gehe alle Punkte durch
-    for (auto it = points.begin(); it != points.end(); it++)
-    {
-        // Wenn der Punkt bereits eine Box hat, schaue ob sie mit einer anderen Intersected
-        if (false && it->has_box)
-        {
-            bool intersects = false;
-            for (auto it2 = points.begin(); it2 != points.end() && !intersects; it2++)
-            {
-                if (it == it2)
-                    continue;
-
-                intersects = Intersects(it->box, it2->box);
-            }
-            // Wenn sie intersected setze die Box auf false
-            if (intersects)
-            {
-                it->has_box = false;
-                if (it != points.begin())
-                    it--;// Achtung fehler wenn it == 0
-            }
-        }
-        else
-        {
-            for (short corner = 0; corner < 4; corner++)
-            {
-                switch (corner)
-                {
-                // Ecke links unten
-                case 0: it->box.x = it->x; it->box.y = it->y + it->box.height; break;
-                // Ecke links oben
-                case 1: it->box.x = it->x; it->box.y = it->y; break;
-                // Ecke rechts oben
-                case 2: it->box.x = it->x - it->box.length; it->box.y = it->y; break;
-                // Ecke rechts unten
-                case 3: it->box.x = it->x - it->box.length; it->box.y = it->y + it->box.height; break;
-                default: cout << "error" << endl; break;
-                }
-
-                bool intersects = false;
-                for (auto it2 = points.begin(); it2 != points.end() && !intersects; it2++)
-                {
-                    if (it == it2)
-                        continue;
-
-                    if (it2->has_box)
-                        intersects = Intersects(it->box, it2->box);
-                }
-                // Wenn sie intersected setze die Box auf false
-                if (!intersects)
-                {
-                    it->has_box = true;
-                    break;
-                }
-            }
-        }
-    }
-
-    int count = GetBoxCount();
-    double time = 0.0;
+    // Take time
+    chrono::steady_clock::time_point end = chrono::steady_clock::now();
 
     WriteToConsole();
-    cout << count << "\t" << time;
+    cout << GetBoxCount(1) << "\t" << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " ms" << endl;
 
     WriteFile(outfile);
+}
+
+bool Problem::Generator(int index) 
+{
+    if (index == points.size())
+    {
+        if (GetBoxCount() > GetBoxCount(1))
+            opt = vector<Point>(points);
+
+        return false;
+    } 
+
+    auto p = points.begin() + index;
+
+    for (short corner = 0; corner < 5; corner++)
+    {
+        switch (corner)
+        {
+        // Ecke links unten
+        case 0: p->box.x = p->x; p->box.y = p->y + p->box.height; break;
+        // Ecke links oben
+        case 1: p->box.x = p->x; p->box.y = p->y; break;
+        // Ecke rechts oben
+        case 2: p->box.x = p->x - p->box.length; p->box.y = p->y; break;
+        // Ecke rechts unten
+        case 3: p->box.x = p->x - p->box.length; p->box.y = p->y + p->box.height; break;
+        case 4: p->has_box = false; return Generator(index+1);
+        default: cout << "error" << endl; break;
+        }
+
+        bool intersects = false;
+        for (auto it2 = points.begin(); it2 != points.end() && !intersects; it2++)
+        {
+            if (p == it2 || !it2->has_box)
+                continue;
+
+            intersects = Intersects(p->box, it2->box);
+        }
+        // Wenn sie intersected setze die Box auf false
+        if (!intersects)
+        {
+            p->has_box = true;
+            if (Generator(index+1))
+                return true;
+        }
+    }
+    return false;
 }
 
 // Returns true if overlapping
@@ -278,11 +266,12 @@ bool Problem::Intersects(int one, int two)
 
 int Problem::IsFeasible()
 {
-    for (auto it = points.begin(); it != points.end(); it++)
+    int prev = 1;
+    for (auto it = points.begin(); it != points.end(); it++, prev++)
     {
         if (it->has_box)
         {
-            for (auto it2 = points.begin(); it2 != points.end(); it2++)
+            for (auto it2 = points.begin() + prev; it2 != points.end(); it2++)
             {
                 if (it == it2)
                     continue;
@@ -296,10 +285,11 @@ int Problem::IsFeasible()
     return 0;
 }
 
-int Problem::GetBoxCount()
+int Problem::GetBoxCount(short which)
 {
     int count = 0;
-    for (auto it = points.begin(); it != points.end(); it++)
+    vector<Point> work = which == 0 ? points : opt;
+    for (auto it = work.begin(); it != work.end(); it++)
     {
         if (it->has_box)
             count++;
@@ -325,7 +315,7 @@ void Problem::WriteToConsole()
         for (int i = -x; i <= x; i++)
         {
             bool found = false;
-            for (auto it = points.begin(); it != points.end(); it++)
+            for (auto it = opt.begin(); it != opt.end(); it++)
             {
                 if (it->x == i && it->y == j)
                 {
