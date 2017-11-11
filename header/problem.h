@@ -1,6 +1,8 @@
 #ifndef _PROBLEM_H_
 #define _PROBLEM_H_
 
+#define DEBUG false
+
 #include <vector>
 #include <iostream>
 #include <string>
@@ -8,6 +10,9 @@
 #include <fstream>
 #include <algorithm>
 #include <chrono>
+
+#include "color.h"
+#include "bitmap.h"
 
 class Problem
 {
@@ -20,25 +25,25 @@ public:
 		std::string label;
 
 		Box() :
-				x(0),
-				y(0),
-				length(0),
-				height(0),
-				label("") {}
+			x(0),
+			y(0),
+			length(0),
+			height(0),
+			label("") {}
 
 		Box(int w, int h, std::string s) :
-				x(0),
-				y(0),
-				length(w),
-				height(h),
-				label(s) {}
+			x(0),
+			y(0),
+			length(w),
+			height(h),
+			label(s) {}
 
 		Box(int w, int h, int xdim, int ydim, std::string s) :
-				x(xdim),
-				y(ydim),
-				length(w),
-				height(h),
-				label(s) {}
+			x(xdim),
+			y(ydim),
+			length(w),
+			height(h),
+			label(s) {}
 
 		Box(const Box &other)
 		{
@@ -46,7 +51,7 @@ public:
 			y = other.y;
 			length = other.length;
 			height = other.height;
-			label = other.label;			
+			label = other.label;
 		}
 
 		std::string ToString()
@@ -65,14 +70,16 @@ public:
 		Box box;
 
 		Point() :
-				x(0),
-				y(0),
-				has_box(false) {}
+			x(0),
+			y(0),
+			has_box(false) {}
 
 		Point(int xdim, int ydim, Box b) :
-				x(xdim),
-				y(ydim),
-				has_box(false) { box = b; }
+			x(xdim),
+			y(ydim),
+			has_box(false) {
+			box = b;
+		}
 
 		Point(const Point &other)
 		{
@@ -85,7 +92,7 @@ public:
 		std::string ToString()
 		{
 			std::string s = std::to_string(x);
-			s += " " + std::to_string(y) + " " +  std::to_string(box.length) + " " + std::to_string(box.height) + " " + box.label + " " +
+			s += " " + std::to_string(y) + " " + std::to_string(box.length) + " " + std::to_string(box.height) + " " + box.label + " " +
 				 std::to_string(has_box) + " " + std::to_string(box.x) + " " + std::to_string(box.y) + "\n";
 
 			return s;
@@ -96,23 +103,31 @@ public:
 	~Problem();
 
 	void CheckSolution(char *infile);
-	void GenerateSolution(char *infile, char *outfile);
+	void GenerateSolution(char *infile, char *outfile, bool print = false);
 
 private:
-	
+
 	void ReadFile(char *filename);
 	size_t ReadPointCount(std::string content);
-	void ReadPoints(std::string content, bool solution=true);
+	void ReadPoints(std::string content, bool solution = true);
 
 	void WriteFile(char *filename);
 
-	int GetBoxCount(short which=0);
+	int GetBoxCount(short which = 0);
+	int IsFeasible();
+
 	bool Intersects(Box p1, Box p2);
 	bool Intersects(int one, int two);
-	int IsFeasible();
-	bool Generator(int index=0);
 
+	bool Generator(int index = 0);
+	bool GeneratorArray(int index = 0);
+	
+	bool CheckBox(Color* pixels, int px, int py, int ll, int lr, int ho, int hu, int intensity);
+	float CalculateOverlap(Color* pixels, int px, int py, int ll, int lr, int ho, int hu, int intensity);
+	void Clean(Color* pixels);
+	
 	void WriteToConsole();
+	void WriteToBMP(char *filename);
 
 	int point_count;
 	std::vector<Point> points, opt;

@@ -1,12 +1,31 @@
-CC = g++
-RM = del
+#-------------------------------------------------------------------------
+# NMAKE-Makefile
+#-------------------------------------------------------------------------
 
-all: program
-	@echo Successfully compiled pointy
+PROJECT=pointy
+CC=g++
+RM=del
 
-program:
-	$(CC) -o pointy header/problem.h source/problem.cpp source/pointy.cpp
+#-------------------------------------------------------------------------
+# Compiler-Flags
+#-------------------------------------------------------------------------
+
+CFLAGS=-o
+
+#-------------------------------------------------------------------------
+# Main-Targets
+#-------------------------------------------------------------------------
+
+all: $(PROJECT).exe
+	@echo.
+	@echo Successfully compiled $(PROJECT)
 
 clean:
-	$(RM) pointy.exe
+	$(RM) $(PROJECT).exe
 
+#-------------------------------------------------------------------------
+# Sub-Targets
+#-------------------------------------------------------------------------
+
+$(PROJECT).exe:
+	$(CC) $(CFLAGS) $(PROJECT) header/color.h header/bitmap.h header/problem.h source/problem.cpp source/pointy.cpp
