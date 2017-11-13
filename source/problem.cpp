@@ -19,8 +19,8 @@ void Problem::CheckSolution(char *infile)
 	// Check solution
 	switch (IsFeasible())
 	{
-		case 0: cout << GetBoxCount() << endl; break;
-		default: cout << "ERROR: unknown problem" << endl;
+	case 0: cout << GetBoxCount() << endl; break;
+	default: cout << "ERROR: unknown problem" << endl;
 	}
 }
 
@@ -46,7 +46,7 @@ void Problem::GenerateSolution(char *infile, char *outfile, bool print)
 	//WriteToConsole();
 	cout << GetBoxCount(1) << "\t" << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " ms" << endl;
 
-	if (print) 
+	if (print)
 		WriteToBMP(outfile);
 
 	instance->WriteFile(outfile);
@@ -75,15 +75,15 @@ bool Problem::Generator(int index)
 		switch (corner)
 		{
 			// Lower left corner
-			case BOT_LEFT: p->box.x = p->x; p->box.y = p->y + p->box.height; break;
+		case BOT_LEFT: p->box.x = p->x; p->box.y = p->y + p->box.height; break;
 			// Upper left corner
-			case TOP_LEFT: p->box.x = p->x; p->box.y = p->y; break;
+		case TOP_LEFT: p->box.x = p->x; p->box.y = p->y; break;
 			// Upper right corner
-			case TOP_RIGHT: p->box.x = p->x - p->box.length; p->box.y = p->y; break;
+		case TOP_RIGHT: p->box.x = p->x - p->box.length; p->box.y = p->y; break;
 			// Lower right corner
-			case BOT_RIGHT: p->box.x = p->x - p->box.length; p->box.y = p->y + p->box.height; break;
-			case NONE: p->has_box = false; return Generator(index + 1);
-			default: cout << "error" << endl; break;
+		case BOT_RIGHT: p->box.x = p->x - p->box.length; p->box.y = p->y + p->box.height; break;
+		case NONE: p->has_box = false; return Generator(index + 1);
+		default: cout << "error" << endl; break;
 		}
 
 		bool intersects = false;
@@ -109,27 +109,26 @@ bool Problem::GeneratorArray(int index)
 {
 	// Loop through all Elements and mark the boxpositions
 	int dpi = 72;
-	int width = 500;
-	int height = 500;
-	int n = width * height;
+	int n = data_w * data_h;
+	cout << "before 1\n";
 	Color *pixels = new Color[n];
+	cout << "after 1\n";
 	int element = 0;
-	int r, g, b;
-	int middle_x = width / 2;
-	int middle_y = height / 2;
-	int multiplier = 10;
+	int middle_x = data_w / 2;
+	int middle_y = data_h / 2;
 	int point_size = 5;
 	int intensity = 30;
 
+	// Color the area
 	for (auto p = instance->points.begin(); p != instance->points.end(); p++)
 	{
 		int l = p->box.length;
 		int h = p->box.height;
-		for (int x = (p->x - l) * multiplier + middle_x; x < (p->x + l) * multiplier + middle_x; x++) {
-			for (int y = (p->y - h) * multiplier + middle_y; y < (p->y + h) * multiplier + middle_y; y++) {
+		for (int x = (p->x - l) + middle_x; x < (p->x + l) + middle_x; x++) {
+			for (int y = (p->y - h) + middle_y; y < (p->y + h) + middle_y; y++) {
 
-				element = y * width + x;
-				pixels[element].g = (pixels[element].g*255 + intensity) / 255;
+				element = y * data_w + x;
+				pixels[element].g = (pixels[element].g * 255 + intensity) / 255;
 			}
 		}
 	}
@@ -145,17 +144,17 @@ bool Problem::GeneratorArray(int index)
 		{
 			switch (corner)
 			{
-			// Lower left corner
+				// Lower left corner
 			case BOT_LEFT:
 			{
 				if (CheckBox(pixels, p->x, p->y, 0, p->box.length, p->box.height, 0, intensity)) {
 
 					int l = p->box.length;
 					int h = p->box.height;
-					for (int x = (p->x - l) * multiplier + middle_x; x < (p->x + l) * multiplier + middle_x; x++) {
-						for (int y = (p->y - h) * multiplier + middle_y; y < (p->y + h) * multiplier + middle_y; y++) {
+					for (int x = (p->x - l) + middle_x; x < (p->x + l) + middle_x; x++) {
+						for (int y = (p->y - h) + middle_y; y < (p->y + h) + middle_y; y++) {
 
-							element = y * width + x;
+							element = y * data_w + x;
 							pixels[element].g = (pixels[element].g * 255 - intensity) / 255;
 						}
 					}
@@ -175,10 +174,10 @@ bool Problem::GeneratorArray(int index)
 
 					int l = p->box.length;
 					int h = p->box.height;
-					for (int x = (p->x - l) * multiplier + middle_x; x < (p->x + l) * multiplier + middle_x; x++) {
-						for (int y = (p->y - h) * multiplier + middle_y; y < (p->y + h) * multiplier + middle_y; y++) {
+					for (int x = (p->x - l) + middle_x; x < (p->x + l) + middle_x; x++) {
+						for (int y = (p->y - h) + middle_y; y < (p->y + h) + middle_y; y++) {
 
-							element = y * width + x;
+							element = y * data_w + x;
 							pixels[element].g = (pixels[element].g * 255 - intensity) / 255;
 						}
 					}
@@ -198,10 +197,10 @@ bool Problem::GeneratorArray(int index)
 
 					int l = p->box.length;
 					int h = p->box.height;
-					for (int x = (p->x - l) * multiplier + middle_x; x < (p->x + l) * multiplier + middle_x; x++) {
-						for (int y = (p->y - h) * multiplier + middle_y; y < (p->y + h) * multiplier + middle_y; y++) {
+					for (int x = (p->x - l) + middle_x; x < (p->x + l) + middle_x; x++) {
+						for (int y = (p->y - h) + middle_y; y < (p->y + h) + middle_y; y++) {
 
-							element = y * width + x;
+							element = y * data_w + x;
 							pixels[element].g = (pixels[element].g * 255 - intensity) / 255;
 						}
 					}
@@ -221,10 +220,10 @@ bool Problem::GeneratorArray(int index)
 
 					int l = p->box.length;
 					int h = p->box.height;
-					for (int x = (p->x - l) * multiplier + middle_x; x < (p->x + l) * multiplier + middle_x; x++) {
-						for (int y = (p->y - h) * multiplier + middle_y; y < (p->y + h) * multiplier + middle_y; y++) {
+					for (int x = (p->x - l) + middle_x; x < (p->x + l) + middle_x; x++) {
+						for (int y = (p->y - h) + middle_y; y < (p->y + h) + middle_y; y++) {
 
-							element = y * width + x;
+							element = y * data_w + x;
 							pixels[element].g = (pixels[element].g * 255 - intensity) / 255;
 						}
 					}
@@ -244,21 +243,21 @@ bool Problem::GeneratorArray(int index)
 
 	int count = 0;
 	// Loop over all instance->points and select for each point the box with the least overlaps
-	for (auto p = instance->points.begin(); p != instance->points.end(); p++)
+	for (auto p = instance->points.begin(); p != instance->points.end(); p++, count++)
 	{
 		// Skip if element already has a box
 		if (p->has_box)
 			continue;
 
-		float min;
-		float tmp = 50000;
+		double min;
+		double tmp = 50000.0;
 		short corner_s = 0;
 
 		for (short corner = 0; corner < 4; corner++)
 		{
 			switch (corner)
 			{
-			// Ecke links unten
+				// Ecke links unten
 			case BOT_LEFT:
 			{
 				min = CalculateOverlap(pixels, p->x, p->y, 0, p->box.length, p->box.height, 0, intensity);
@@ -344,29 +343,30 @@ bool Problem::GeneratorArray(int index)
 		}
 
 		if (DEBUG)
-			savebmp(("tmp_solution" + std::to_string(count) +".bmp").c_str(), width, height, dpi, pixels);
+			//savebmp(("data/tmp_solution" + std::to_string(count) + ".bmp").c_str(), width, height, dpi, pixels);
+			WriteToBMP(count, pixels);
 
 		int l = p->box.length;
 		int h = p->box.height;
-		for (int x = (p->x - l) * multiplier + middle_x; x < (p->x + l) * multiplier + middle_x; x++) {
-			for (int y = (p->y - h) * multiplier + middle_y; y < (p->y + h) * multiplier + middle_y; y++) {
+		for (int x = (p->x - l) + middle_x; x < (p->x + l) + middle_x; x++) {
+			for (int y = (p->y - h) + middle_y; y < (p->y + h) + middle_y; y++) {
 
-				element = y * width + x;
+				element = y * data_w + x;
 				if (pixels[element].g != 1.0f)
 					pixels[element].g = (pixels[element].g * 255 - intensity) / 255;
 			}
 		}
 
 		if (min < 200)
-		for (int x = p->box.x * multiplier + middle_x; x < (p->box.x + p->box.length) * multiplier + middle_x; x++) {
-			for (int y = (p->box.y - p->box.height) * multiplier + middle_y; y < p->box.y * multiplier + middle_y; y++) {
+		{
+			for (int x = p->box.x + middle_x; x < (p->box.x + p->box.length) + middle_x; x++) {
+				for (int y = (p->box.y - p->box.height) + middle_y; y < p->box.y + middle_y; y++) {
 
-				element = y * width + x;
-				pixels[element].g = 1.0f;
+					element = y * data_w + x;
+					pixels[element].g = 1.0f;
+				}
 			}
 		}
-
-		count++;
 	}
 
 	opt = vector<Point>(instance->points);
@@ -379,17 +379,15 @@ bool Problem::GeneratorArray(int index)
 // TODO einfach den Point mitgeben
 bool Problem::CheckBox(Color* pixels, int px, int py, int ll, int lr, int ho, int hu, int intensity)
 {
-	int multiplier = 10; // TODO: 10 oder 25 ?
-	int width = 500;
-	int middle_x = 250;
-	int middle_y = 250;
+	int middle_x = data_w / 2;
+	int middle_y = data_h / 2;
 	int element;
 
 
-	for (int x = (px - ll) * multiplier + middle_x; x < (px + lr) * multiplier + middle_x; x++) {
-		for (int y = (py - hu) * multiplier + middle_y; y < (py + ho) * multiplier + middle_y; y++) {
+	for (int x = (px - ll) + middle_x; x < (px + lr) + middle_x; x++) {
+		for (int y = (py - hu) + middle_y; y < (py + ho) + middle_y; y++) {
 
-			element = y * width + x;
+			element = y * data_w + x;
 			if (pixels[element].g != intensity / 255.0)
 			{
 				return false;
@@ -399,36 +397,33 @@ bool Problem::CheckBox(Color* pixels, int px, int py, int ll, int lr, int ho, in
 	return true;
 }
 
-float Problem::CalculateOverlap(Color* pixels, int px, int py, int ll, int lr, int ho, int hu, int intensity)
+double Problem::CalculateOverlap(Color* pixels, int px, int py, int ll, int lr, int ho, int hu, int intensity)
 {
-	int multiplier = 10;
-	int width = 500;
-	int middle_x = 250;
-	int middle_y = 250;
+	int middle_x = data_w / 2;
+	int middle_y = data_h / 2;
 	int element;
-	float amount = 0.0;
+	double amount = 0.0;
 
 	// THEORETISCH soll hier der flächeninhalt errechnet werden
 	// soll heißen
 	// gesamtfärbung / flächeninhalt  = durchschnittliche Faerbung
 
-	for (int x = (px - ll) * multiplier + middle_x; x < (px + lr) * multiplier + middle_x; x++) {
-		for (int y = (py - hu) * multiplier + middle_y; y < (py + ho) * multiplier + middle_y; y++) {
-			element = y * width + x;
+	for (int x = (px - ll) + middle_x; x < (px + lr) + middle_x; x++) {
+		for (int y = (py - hu) + middle_y; y < (py + ho) + middle_y; y++) {
+
+			element = y * data_w + x;
 			if (pixels[element].g == 1.0f)
 				return 510.0f;
-			amount += pixels[element].g * 255.0f;
+			amount += pixels[element].g * 255.0;
 		}
 	}
-	return amount / (((px + lr) * multiplier + middle_x - (px - ll) * multiplier + middle_x) * ((py + ho) * multiplier + middle_y - (py - hu) * multiplier + middle_y));
+	return amount / (((px + lr) + middle_x - (px - ll) + middle_x) * ((py + ho) + middle_y - (py - hu) + middle_y));
 }
 
 void Problem::Clean(Color* pixels)
 {
-	int multiplier = 10;
-	int width = 500;
-	int middle_x = 250;
-	int middle_y = 250;
+	int middle_x = data_w / 2;
+	int middle_y = data_h / 2;
 	int element;
 	int intensity = 30;
 
@@ -439,10 +434,10 @@ void Problem::Clean(Color* pixels)
 
 		int l = p->box.length;
 		int h = p->box.height;
-		for (int x = (p->x - l) * multiplier + middle_x; x < (p->x + l) * multiplier + middle_x; x++) {
-			for (int y = (p->y - h) * multiplier + middle_y; y < (p->y + h) * multiplier + middle_y; y++) {
+		for (int x = (p->x - l) + middle_x; x < (p->x + l) + middle_x; x++) {
+			for (int y = (p->y - h) + middle_y; y < (p->y + h) + middle_y; y++) {
 
-				element = y * width + x;
+				element = y * data_w + x;
 				if (pixels[element].g != 1.0f)
 					pixels[element].g = (pixels[element].g * 255 - intensity) / 255;
 			}
@@ -454,13 +449,13 @@ void Problem::Clean(Color* pixels)
 bool Problem::Intersects(Box p1, Box p2)
 {
 	return p1.x < p2.x + p2.length && p1.x + p1.length > p2.x &&
-		   p1.y > p2.y - p2.height && p1.y - p1.height < p2.y;
+		p1.y > p2.y - p2.height && p1.y - p1.height < p2.y;
 }
 
 bool Problem::Intersects(int one, int two)
 {
 	return instance->points[one].box.x < instance->points[two].box.x + instance->points[two].box.length && instance->points[one].box.x + instance->points[one].box.length > instance->points[two].box.x &&
-		   instance->points[one].box.y > instance->points[two].box.y - instance->points[two].box.height && instance->points[one].box.y - instance->points[one].box.height < instance->points[two].box.y;
+		instance->points[one].box.y > instance->points[two].box.y - instance->points[two].box.height && instance->points[one].box.y - instance->points[one].box.height < instance->points[two].box.y;
 }
 
 int Problem::IsFeasible()
@@ -497,49 +492,41 @@ int Problem::GetBoxCount(short which)
 	return count;
 }
 
-void Problem::WriteToConsole()
+void Problem::WriteToBMP(int count, Color *data)
 {
-	int x = 9, y = 9;
+	int dpi = 72;
+	int multiplier = (image_w / data_w);
+	float screenaspect = 2.0f / ((float) image_w / (float) data_w);
+	cout << "before 2\n";
+	Color *pixels = new Color[image_w * image_h];
+	cout << "after 2\n";
+	int middle_x = data_w / 2;
+	int middle_y = data_h / 2;
 
-	cout << "   |";
-	for (int i = -x; i <= x; i++)
-	{
-		i < 0 ? cout << i : cout << " " << i;
-	}
-	cout << endl;
+	int element;
+	int element2;
 
-	for (int j = y; j >= -y; j--)
-	{
-		j < 0 ? cout << j << " | " : cout << " " << j << " | ";
-		for (int i = -x; i <= x; i++)
-		{
-			bool found = false;
-			for (auto it = opt.begin(); it != opt.end(); it++)
+	// Loop over all Pixel around the Center in the Area.
+	for (int y = middle_y - data_h / (multiplier * screenaspect); y < middle_y + data_h / (multiplier * screenaspect); y++) {
+		for (int x = middle_x - data_w / (multiplier * screenaspect); x < middle_x + data_w / (multiplier * screenaspect); x++) {
+			// Element position in pixels array
+			element = y * data_w + x;
+
+			for (int i = 0; i < multiplier; i++)
 			{
-				if (it->x == i && it->y == j)
+				for (int j = 0; j < multiplier; j++)
 				{
-					cout << "X ";
-					found = true;
-					break;
+					element2 = (y - (middle_y - data_h / (multiplier * screenaspect))) * multiplier * image_w + (x - (middle_x - data_w / (multiplier * screenaspect))) * multiplier + j + i * image_w;
+
+					pixels[element2].g = data[element].g;
 				}
-				else if (it->has_box && it->box.x <= i && it->box.y >= j && it->box.y - it->box.height <= j && it->box.x + it->box.length >= i)
-				{
-					cout << "O ";
-					found = true;
-					break;
-				}
-			}
-			if (!found) {
-				if (j == 0)
-					i == 0 ? cout << "+-" : cout << "--";
-				else if (i == 0)
-					cout << "| ";
-				else
-					cout << "  ";
 			}
 		}
-		cout << endl;
 	}
+
+	savebmp(("data/tmp_solution" + std::to_string(count) + ".bmp").c_str(), image_w, image_h, dpi, pixels);
+
+	delete[] pixels;
 }
 
 void Problem::WriteToBMP(char *filename)

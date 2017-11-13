@@ -1,0 +1,6 @@
+5
+1 0 8 2 Grooooﬂstadt 0 0 0
+3 2 6 1 St‰dtchen 0 0 0
+-2 1 3 4 Dorf 0 0 0
+-3 -2 5 2 Kuhdorf 0 0 0
+-1 -1 6 2 Bauernhof 0 0 0

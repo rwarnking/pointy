@@ -31,16 +31,19 @@ private:
 
 	bool Generator(int index = 0);
 	bool GeneratorArray(int index = 0);
-	
+
 	bool CheckBox(Color* pixels, int px, int py, int ll, int lr, int ho, int hu, int intensity);
-	float CalculateOverlap(Color* pixels, int px, int py, int ll, int lr, int ho, int hu, int intensity);
+	double CalculateOverlap(Color* pixels, int px, int py, int ll, int lr, int ho, int hu, int intensity);
 	void Clean(Color* pixels);
 
-	void WriteToConsole();
-    void WriteToBMP(char *filename);
+	void WriteToBMP(char *filename);
+	void WriteToBMP(int count, Color *pixels);
 
-    Instance *instance;
-    std::vector<Point> opt;
+	Instance *instance;
+	std::vector<Point> opt;
+
+	int data_w = 30000, data_h = 30000;
+	int image_w = 30000, image_h = 30000;
 };
 
 #endif

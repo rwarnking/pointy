@@ -1,2 +1,9 @@
 # Compiled source #
 *.exe
+
+# Documents #
+*.pdf
+
+# Archives #
+*.zip
+*.tar

@@ -60,12 +60,12 @@ void PrintHelp()
     cout << "\tuniform distribution = 1 (true)" << endl << endl;
 }
 
-void GenerateInstance(const char *filename, int point_count, int min, int max, bool even)
+void GenerateInstance(const char *filename, int point_count, int min, int max, bool uniform)
 {
     vector<Point> points = vector<Point>(point_count);
 
     // Generates points with even distribution across [min, max]
-    if (even)
+    if (uniform)
     {
         default_random_engine gen;
         uniform_int_distribution<int> pdis(min, max);
