@@ -23,6 +23,9 @@ public:
 
 private:
 
+	void SimpleSolve();
+	CORNER GetBestOrientation(int x, int y);
+
 	int GetBoxCount(short which = 0);
 	int IsFeasible();
 

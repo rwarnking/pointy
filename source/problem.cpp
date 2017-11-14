@@ -38,18 +38,56 @@ void Problem::GenerateSolution(char *infile, char *outfile, bool print)
 
 	//Generator();
 	//instance->points = vector<Point>(opt);
-	GeneratorArray();
+	//GeneratorArray();
+	SimpleSolve();
 
 	// Take time
 	chrono::steady_clock::time_point end = chrono::steady_clock::now();
 
-	//WriteToConsole();
-	cout << GetBoxCount(1) << "\t" << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " ms" << endl;
+	// TODO
+	cout << GetBoxCount(0) << "\t" << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " ms" << endl;
 
 	if (print)
 		WriteToBMP(outfile);
 
 	instance->WriteFile(outfile);
+}
+
+void Problem::SimpleSolve()
+{
+	vector<Point>& points = *instance->GetPoints();
+	
+	for (size_t i = 0; i < points.size(); i++)
+	{
+		CORNER c = GetBestOrientation(points[i].x, points[i].y);
+		points[i].has_box = true;
+		switch(c)
+		{
+			// Lower left corner
+			case BOT_LEFT: points[i].box.x = points[i].x; points[i].box.y = points[i].y + points[i].box.height; break;
+			// Upper left corner
+			case TOP_LEFT: points[i].box.x = points[i].x; points[i].box.y = points[i].y; break;
+			// Upper right corner
+			case TOP_RIGHT: points[i].box.x = points[i].x - points[i].box.length; points[i].box.y = points[i].y; break;
+			// Lower right corner
+			case BOT_RIGHT: points[i].box.x = points[i].x - points[i].box.length; points[i].box.y = points[i].y + points[i].box.height; break;
+			default: cout << "error" << endl; break;
+		}
+		for (size_t j = 0; j < i; j++)
+		{
+			if (Intersects(points[i].box, points[j].box))
+			{
+				points[i].has_box = false;
+				break;
+			}
+		}
+	}
+}
+
+CORNER Problem::GetBestOrientation(int x, int y)
+{
+	// TODO
+	return BOT_RIGHT;
 }
 
 bool Problem::Generator(int index)
