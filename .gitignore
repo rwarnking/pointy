@@ -7,3 +7,6 @@
 # Archives #
 *.zip
 *.tar
+
+# Folders #
+**/data/random_rect

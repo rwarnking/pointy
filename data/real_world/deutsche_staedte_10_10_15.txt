@@ -1,0 +1,17 @@
+15
+90 530 10 10 Hamburg 0 0 0
+130 530 10 10 Berlin 0 0 0
+80 530 10 10 Bremen 0 0 0
+110 480 10 10 Muenchen 0 0 0
+60 510 10 10 Duisburg 0 0 0
+130 510 10 10 Dresden 0 0 0
+60 500 10 10 Koeln 0 0 0
+70 490 10 10 Saarbruecken 0 0 0
+120 490 10 10 Regensburg 0 0 0
+110 520 10 10 Magdeburg 0 0 0
+90 480 10 10 Thuebingen 0 0 0
+70 510 10 10 Essen 0 0 0
+80 520 10 10 Osnabrueck 0 0 0
+90 520 10 10 Hannover 0 0 0
+70 510 10 10 Duesseldorf 0 0 0
+
