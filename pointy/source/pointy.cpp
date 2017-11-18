@@ -17,7 +17,7 @@ int main(int argc, char **argv)
 {
 	Problem prob = Problem();
 
-		if (argc == 3)
+	if (argc == 3)
 	{
 		if (string(argv[1]).compare("-eval") == 0 )
 		{
