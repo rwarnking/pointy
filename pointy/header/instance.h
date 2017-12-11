@@ -10,6 +10,7 @@
 #include <exception>
 #include <fstream>
 #include <cmath>
+#include <climits>
 
 enum CORNER : short
 {
@@ -20,84 +21,39 @@ enum CORNER : short
 	NONE
 };
 
-struct Box
+class Box
 {
+public:
+
 	int x, y, length, height;
+	CORNER corner;
 	std::string label;
 
-	Box() :
-		x(0),
-		y(0),
-		length(0),
-		height(0),
-		label("") {}
+	Box();
+	Box(int w, int h, std::string s);
+	Box(int w, int h, int xdim, int ydim, std::string s);
+	Box(const Box &other);
 
-	Box(int w, int h, std::string s) :
-		x(0),
-		y(0),
-		length(w),
-		height(h),
-		label(s) {}
-
-	Box(int w, int h, int xdim, int ydim, std::string s) :
-		x(xdim),
-		y(ydim),
-		length(w),
-		height(h),
-		label(s) {}
-
-	Box(const Box &other)
-	{
-		x = other.x;
-		y = other.y;
-		length = other.length;
-		height = other.height;
-		label = other.label;
-	}
-
-	std::string ToString()
-	{
-		std::string s = std::string("x: ");
-		s += std::to_string(x) + ", y: " + std::to_string(y) + ", length: " + std::to_string(length) + ", height: " + std::to_string(height) + ", label: " + label;
-
-		return s;
-	}
+	std::string ToString();
+	
+	bool Intersects(Box &other);
 };
 
-struct Point
+class Point
 {
+public:
+
 	int x, y;
-	bool has_box;
 	Box box;
 
-	Point() :
-		x(0),
-		y(0),
-		has_box(false) {}
+	Point();
+	Point(int xdim, int ydim, Box b);
+	Point(const Point &other);
 
-	Point(int xdim, int ydim, Box b) :
-		x(xdim),
-		y(ydim),
-		has_box(false) {
-		box = b;
-	}
+	std::string ToString();
 
-	Point(const Point &other)
-	{
-		x = other.x;
-		y = other.y;
-		has_box = other.has_box;
-		box = Box(other.box);
-	}
-
-	std::string ToString()
-	{
-		std::string s = std::to_string(x);
-		s += " " + std::to_string(y) + " " + std::to_string(box.length) + " " + std::to_string(box.height) + " " + box.label + " " +
-			std::to_string(has_box) + " " + std::to_string(box.x) + " " + std::to_string(box.y) + "\n";
-
-		return s;
-	}
+	bool HasBox();
+	void ComputeBoxFromCoords();
 };
 
 class Instance
@@ -113,8 +69,13 @@ public:
 	int GetPointCount();
 	std::vector<Point>* GetPoints();
 
-	int GetRangeX();
-	int GetRangeY();
+	int MaxX();
+	int MinX();
+	int MaxY();
+	int MinY();
+
+	int GetDimensionX();
+	int GetDimensionY();
 	int GetMiddleX();
 	int GetMiddleY();
 
@@ -123,7 +84,7 @@ public:
 
 	void WriteFile(const char *filename);
 
-	int point_count;
+	size_t point_count;
 	std::vector<Point> points;
 
 private:

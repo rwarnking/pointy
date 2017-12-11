@@ -2,14 +2,110 @@
 
 using namespace std;
 
+Box::Box() :
+	x(0),
+	y(0),
+	length(0),
+	height(0),
+	label(""),
+	corner(NONE) {}
+
+Box::Box(int w, int h, std::string s) :
+	x(0),
+	y(0),
+	length(w),
+	height(h),
+	label(s),
+	corner(NONE) {}
+
+Box::Box(int w, int h, int xdim, int ydim, std::string s) :
+	x(xdim),
+	y(ydim),
+	length(w),
+	height(h),
+	label(s),
+	corner(NONE) {}
+
+Box::Box(const Box &other)
+{
+	x = other.x;
+	y = other.y;
+	length = other.length;
+	height = other.height;
+	label = other.label;
+	corner = other.corner;
+}
+
+std::string Box::ToString()
+{
+	std::string s = std::string("x: ");
+	s += std::to_string(x) + ", y: " + std::to_string(y) + ", length: " + std::to_string(length) + ", height: " +
+		 std::to_string(height) + ", label: " + label + "corner: " + to_string(corner);
+
+	return s;
+}
+
+bool Box::Intersects(Box &other)
+{
+	return x < other.x + other.length && x + length > other.x &&
+		   y > other.y - other.height && y - height < other.y;
+}
+
+Point::Point() :
+	x(0),
+	y(0) {}
+
+Point::Point(int xdim, int ydim, Box b) :
+	x(xdim),
+	y(ydim) { box = b; }
+
+Point::Point(const Point &other)
+{
+	x = other.x;
+	y = other.y;
+	box = Box(other.box);
+}
+
+bool Point::HasBox()
+{
+	return box.corner != NONE;
+}
+
+void Point::ComputeBoxFromCoords()
+{
+	int diffx = x - box.x;
+    int diffy = y - box.y;
+
+    if (diffx == 0 && diffy == 0)
+        box.corner = TOP_LEFT;
+    else if (diffx > 0 && diffy == 0)
+        box.corner = TOP_RIGHT;
+    else if (diffx == 0 && diffy > 0)
+        box.corner = BOT_LEFT;
+    else if (diffx < 0 && diffy > 0)
+    	box.corner = BOT_RIGHT;
+    else
+    	box.corner = NONE;
+
+}
+
+std::string Point::ToString()
+{
+	std::string s = std::to_string(x);
+	s += " " + std::to_string(y) + " " + std::to_string(box.length) + " " + std::to_string(box.height) + " " + box.label + " " +
+		 std::to_string(HasBox()) + " " + std::to_string(box.x) + " " + std::to_string(box.y) + "\n";
+
+	return s;
+}
+
 Instance::Instance()
 {
 	points = vector<Point>();
 	point_count = 0;
-	min_x = max_x = 0;
-	min_y = max_y = 0;
-	min_l = max_l = 0;
-	min_h = max_h = 0;
+	min_x = min_y = INT_MAX;
+	max_x = max_y = INT_MIN;
+	min_l = min_h  = INT_MAX;
+	max_l = max_h = INT_MIN;
 }
 
 Instance::Instance(vector<Point> *p)
@@ -17,18 +113,18 @@ Instance::Instance(vector<Point> *p)
 	points = *p;
 	point_count = (int)points.size();
 	// TODO search min/max
-	min_x = max_x = 0;
-	min_y = max_y = 0;
-	min_l = max_l = 0;
-	min_h = max_h = 0;
+	min_x = min_y = INT_MAX;
+	max_x = max_y = INT_MIN;
+	min_l = min_h  = INT_MAX;
+	max_l = max_h = INT_MIN;
 }
 
 Instance::Instance(const char* filename, bool read_solution)
 {
-	min_x = max_x = 0;
-	min_y = max_y = 0;
-	min_l = max_l = 0;
-	min_h = max_h = 0;
+	min_x = min_y = INT_MAX;
+	max_x = max_y = INT_MIN;
+	min_l = min_h  = INT_MAX;
+	max_l = max_h = INT_MIN;
 	ReadFile(filename, read_solution);
 }
 
@@ -52,24 +148,47 @@ std::vector<Point>* Instance::GetPoints()
 	return &points;
 }
 
-int Instance::GetRangeX()
+int Instance::MinX()
 {
-	return abs(max_x - min_x);
+	return min_x;
 }
 
-int Instance::GetRangeY()
+int Instance::MaxX()
 {
-	return abs(max_y - min_y);
+	return max_x;
+}
+
+int Instance::MinY()
+{
+	return min_y;
+}
+
+int Instance::MaxY()
+{
+	return max_y;
+}
+
+int Instance::GetDimensionX()
+{
+	cout << "max x: " << max_x << " min x: " << min_x << " max l: " << max_l << endl;
+	cout << "max y: " << max_y << " min y: " << min_y << " max h: " << max_h << endl;
+
+	return (max_x - min_x) + max_l * 2;
+}
+
+int Instance::GetDimensionY()
+{
+	return (max_y - min_y) + max_h * 2;
 }
 
 int Instance::GetMiddleX()
 {
-	return (min_x + max_x) / 2;
+	return min_x + (max_x - min_x) / 2;
 }
 
 int Instance::GetMiddleY()
 {
-	return (min_y + max_y) / 2;
+	return min_y + (max_y - min_y) / 2;
 }
 
 void Instance::SetPointCount(int count)
@@ -189,7 +308,6 @@ void Instance::ReadPoints(string content, bool read_solution)
 
 		if (read_solution)
 		{
-			bool has_box = content[0] == '1';
 			content = content.substr(2, string::npos);
 
 			int box_koords[2] = {};
@@ -215,7 +333,7 @@ void Instance::ReadPoints(string content, bool read_solution)
 				}
 			}
 			points[i] = Point(vals[0], vals[1], Box(vals[2], vals[3], box_koords[0], box_koords[1], label));
-			points[i].has_box = has_box;
+			points[i].ComputeBoxFromCoords();
 		}
 		else
 		{

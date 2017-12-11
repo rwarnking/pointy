@@ -13,6 +13,22 @@ void PrintHelp(void)
 	cout << "The related files will be generated in the data-folder. Therefore the inputfiles should be located in the same folder." << endl;
 }
 
+void ParseFlags(char **argv, int argc, bool &print, ALGORITHM &algorithm)
+{
+	bool found = false;
+	for (int i = 5; i < argc; i++)
+	{
+		if (string(argv[i]).compare("-p") == 0)
+			print = true;
+		else if (!found && string(argv[i]).compare("-g") == 0)
+			algorithm = GRAPHIC;
+		else if (!found && string(argv[i]).compare("-s") == 0)
+			algorithm = SIMULATED_ANNEALING;
+		else if (!found && string(argv[i]).compare("-i") == 0)
+			algorithm = IDIOT;
+	}
+}
+
 int main(int argc, char **argv)
 {
 	Problem prob = Problem();
@@ -45,14 +61,11 @@ int main(int argc, char **argv)
 	{
 		if (string(argv[1]).compare("-in") == 0 && string(argv[3]).compare("-out") == 0)
 		{
-			bool print = string(argv[5]).compare("-p") == 0 || (argc == 7 && string(argv[6]).compare("-p") == 0);
-			short algo = 0;
-			if (string(argv[5]).compare("-p") != 0)
-				algo = string(argv[5]).compare("-d") == 0 ? 1 : (string(argv[5]).compare("-t") == 0 ? 2 : 0);
-			else if (argc == 7 && string(argv[6]).compare("-p") != 0)
-				algo = string(argv[6]).compare("-d") == 0 ? 1 : (string(argv[6]).compare("-t") == 0 ? 2 : 0);
-
-			prob.GenerateSolution(argv[2], argv[4], print, 1);
+			bool print = false;
+			ALGORITHM algorithm = IDIOT;
+			ParseFlags(argv, argc, print, algorithm);
+			
+			prob.GenerateSolution(argv[2], argv[4], print, algorithm);
 		}
 		else
 		{

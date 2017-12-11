@@ -1,4 +1,5 @@
 #include "../header/problem.h"
+#include "../header/simulated_annealing.h"
 
 using namespace std;
 
@@ -19,14 +20,15 @@ void Problem::CheckSolution(char *infile)
 	// Check solution
 	switch (IsFeasible())
 	{
-	case 0: cout << GetBoxCount() << endl; break;
-	default: cout << "ERROR: unknown problem" << endl;
+		case 0: cout << GetBoxCount() << endl; break;
+		case 1: cout << "ERROR: found overlapping labels" << endl; break;
+		default: cout << "ERROR: unknown problem" << endl;
 	}
 }
 
 // Read problem in 'infile', then generate solution(s) and
 // write the solution to 'outfile'
-void Problem::GenerateSolution(char *infile, char *outfile, bool print, short algorithm)
+void Problem::GenerateSolution(char *infile, char *outfile, bool print, ALGORITHM algorithm)
 {
 	instance = new Instance(infile);
 
@@ -36,13 +38,26 @@ void Problem::GenerateSolution(char *infile, char *outfile, bool print, short al
 	// Sort from smallest to biggest box
 	sort(instance->points.begin(), instance->points.end(), [](Point &p1, Point &p2) { return p1.box.length * p1.box.height < p2.box.length * p2.box.height; });
 
-	//Generator();
-	//instance->points = vector<Point>(opt);
+	size_t objective_value = 0;
 	switch (algorithm)
 	{
-		case 0: SimpleSolve(); break;
-		case 1: GeneratorArray(); break;
-		case 2: Generator(); break;
+		case IDIOT:
+		{
+			SimpleSolve();
+			objective_value = GetBoxCount(algorithm);
+		} break;
+		case GRAPHIC:
+		{
+			// TODO: different class/file
+			GeneratorArray();
+			objective_value = GetBoxCount(algorithm);
+		} break;
+		case SIMULATED_ANNEALING:
+		{
+			SimulatedAnnealing solver = SimulatedAnnealing(250000);
+			solver.SetInitialSolution(false);
+			objective_value = solver.Solve(instance);
+		} break;
 		default: cout << "Invalid algorithm parameter" << endl;
 	}
 
@@ -50,7 +65,7 @@ void Problem::GenerateSolution(char *infile, char *outfile, bool print, short al
 	chrono::steady_clock::time_point end = chrono::steady_clock::now();
 
 	//WriteToConsole();
-	cout << GetBoxCount(algorithm == 0 ? 0 : 1) << "\t" << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " ms" << endl;
+	cout << objective_value << "\t" << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " ms" << endl;
 
 	if (print)
 		WriteToBMP(outfile);
@@ -64,9 +79,8 @@ void Problem::SimpleSolve()
 
 	for (size_t i = 0; i < points.size(); i++)
 	{
-		CORNER c = GetBestOrientation(points[i].x, points[i].y);
-		points[i].has_box = true;
-		switch (c)
+		points[i].box.corner = GetBestOrientation(points[i].x, points[i].y);
+		switch (points[i].box.corner)
 		{
 			// Lower left corner
 			case BOT_LEFT: points[i].box.x = points[i].x; points[i].box.y = points[i].y + points[i].box.height; break;
@@ -82,7 +96,7 @@ void Problem::SimpleSolve()
 		{
 			if (Intersects(points[i].box, points[j].box))
 			{
-				points[i].has_box = false;
+				points[i].box.corner = NONE;
 				break;
 			}
 		}
@@ -94,7 +108,7 @@ CORNER Problem::GetBestOrientation(int x, int y)
 	int middle_x = instance->GetMiddleX();
 	int middle_y = instance->GetMiddleY();
 
-	if (x < middle_x)
+	if (x <= middle_x)
 		return y < middle_y ? TOP_RIGHT : BOT_RIGHT;
 	else
 		return y < middle_y ? TOP_LEFT : BOT_LEFT;
@@ -105,7 +119,7 @@ bool Problem::Generator(int index)
 	int point_count = instance->point_count;
 
 	int tmp1 = GetBoxCount();
-	int tmp2 = GetBoxCount(1);
+	int tmp2 = GetBoxCount(GRAPHIC);
 
 	// Wenn alle Punkte durchgegangen, oder wir generell ein optimum gefunden haben oder wenn dieser Weg kein Optimum mehr werden kann
 	if (index == instance->points.size() || tmp2 == point_count || tmp1 + point_count - index < tmp2)
@@ -130,14 +144,14 @@ bool Problem::Generator(int index)
 		case TOP_RIGHT: p->box.x = p->x - p->box.length; p->box.y = p->y; break;
 			// Lower right corner
 		case BOT_RIGHT: p->box.x = p->x - p->box.length; p->box.y = p->y + p->box.height; break;
-		case NONE: p->has_box = false; return Generator(index + 1);
+		case NONE: p->box.corner = NONE; return Generator(index + 1);
 		default: cout << "error" << endl; break;
 		}
 
 		bool intersects = false;
 		for (auto it2 = instance->points.begin(); it2 != instance->points.end() && !intersects; it2++)
 		{
-			if (p == it2 || !it2->has_box)
+			if (p == it2 || !it2->HasBox())
 				continue;
 
 			intersects = Intersects(p->box, it2->box);
@@ -145,7 +159,7 @@ bool Problem::Generator(int index)
 		// Wenn sie intersected setze die Box auf false
 		if (!intersects)
 		{
-			p->has_box = true;
+			p->box.corner = (CORNER) corner;
 			if (Generator(index + 1))
 				return true;
 		}
@@ -155,6 +169,21 @@ bool Problem::Generator(int index)
 
 bool Problem::GeneratorArray(int index)
 {
+	// set the range of the data 
+	data_w = min(instance->GetDimensionX(), (int) sqrt(INT_MAX));
+	data_h = min(instance->GetDimensionY(), (int) sqrt(INT_MAX));
+
+	cout << "dim x = " << instance->GetDimensionX() << ", dim y = " << instance->GetDimensionY() << endl;
+
+	cout << data_w * data_h << " " << GetRAM() / (2 * sizeof(int)) << endl;
+
+	if (data_w * data_h > GetRAM() / (2 * sizeof(int)))
+		return false; // TODO verwenden bzw behandeln
+
+	Translate();
+
+	cout << "mutl: " << (multiplier = image_w / data_w) << " image: " << image_w << " data: " << data_w << endl;
+
 	// Loop through all Elements and mark the boxpositions
 	int n = data_w * data_h;
 	int *pixels = new int[n];
@@ -180,29 +209,25 @@ bool Problem::GeneratorArray(int index)
 		}
 	}
 
-	// Loop over all instance->points and select the box that has no overlaps
-	for (auto p = instance->points.begin(); p != instance->points.end(); p++)
+	// Loop over all instance->points and select the boxes wich have no overlaps
+	for (auto p = instance->points.begin(); p != instance->points.end() && false; p++)
 	{
 		// Skip element if it already has a box
-		if (p->has_box)
+		if (p->HasBox())
 			continue;
 
-		for (short corner = 0; corner < 4; corner++)
+		bool found = false;
+		for (short corner = 0; corner < 4 && !found; corner++)
 		{
 			switch (corner)
 			{
-				// Lower left corner
+			// Lower left corner
 			case BOT_LEFT:
 			{
 				if (CheckBox(pixels, p->x, p->y, 0, p->box.length, p->box.height, 0)) {
-
-					CleanPointArea(*p, pixels);
-
-					p->has_box = true;
 					p->box.x = p->x;
 					p->box.y = p->y + p->box.height;
-					corner = 5;
-					p = instance->points.begin();
+					found = true;
 				}
 				break;
 			}
@@ -210,14 +235,9 @@ bool Problem::GeneratorArray(int index)
 			case TOP_LEFT:
 			{
 				if (CheckBox(pixels, p->x, p->y, 0, p->box.length, 0, p->box.height)) {
-
-					CleanPointArea(*p, pixels);
-
-					p->has_box = true;
 					p->box.x = p->x;
 					p->box.y = p->y;
-					corner = 5;
-					p = instance->points.begin();
+					found = true;
 				}
 				break;
 			}
@@ -225,33 +245,31 @@ bool Problem::GeneratorArray(int index)
 			case TOP_RIGHT:
 			{
 				if (CheckBox(pixels, p->x, p->y, p->box.length, 0, 0, p->box.height)) {
-
-					CleanPointArea(*p, pixels);
-
-					p->has_box = true;
 					p->box.x = p->x - p->box.length;
 					p->box.y = p->y;
-					corner = 5;
-					p = instance->points.begin();
+					found = true;
 				}
 				break;
 			}
-			// Lower left corner
+			// Lower right corner
 			case BOT_RIGHT:
 			{
 				if (CheckBox(pixels, p->x, p->y, p->box.length, 0, p->box.height, 0)) {
 
-					CleanPointArea(*p, pixels);
-
-					p->has_box = true;
 					p->box.x = p->x - p->box.length;
 					p->box.y = p->y + p->box.height;
-					corner = 5;
-					p = instance->points.begin();
+					found = true;
 				}
 				break;
 			}
 			default: cout << "ERROR: switch case 1 " << endl; break;
+			}
+
+			if (found)
+			{
+				CleanPointArea(*p, pixels);
+				p->box.corner = (CORNER) corner;
+				p = instance->points.begin();
 			}
 		}
 	}
@@ -261,7 +279,7 @@ bool Problem::GeneratorArray(int index)
 	for (auto p = instance->points.begin(); p != instance->points.end(); p++, count++)
 	{
 		// Skip if element already has a box
-		if (p->has_box)
+		if (p->HasBox())
 			continue;
 
 		double min;
@@ -272,82 +290,74 @@ bool Problem::GeneratorArray(int index)
 		{
 			switch (corner)
 			{
-				// Ecke links unten
+			// Lower left corner
 			case BOT_LEFT:
 			{
 				min = CalculateOverlap(pixels, p->x, p->y, 0, p->box.length, p->box.height, 0);
 				break;
 			}
-			// Ecke links oben
+			// Upper left corner
 			case TOP_LEFT:
 			{
 				tmp = CalculateOverlap(pixels, p->x, p->y, 0, p->box.length, 0, p->box.height);
-				if ((min > tmp || min == -1) && tmp != -1)
-				{
-					min = tmp;
-					corner_s = 1;
-				}
 				break;
 			}
-			// Ecke rechts oben
+			// Upper right corner
 			case TOP_RIGHT:
 			{
 				tmp = CalculateOverlap(pixels, p->x, p->y, p->box.length, 0, 0, p->box.height);
-				if ((min > tmp || min == -1) && tmp != -1)
-				{
-					min = tmp;
-					corner_s = 2;
-				}
 				break;
 			}
-			// Ecke rechts unten
+			// Lower right corner
 			case BOT_RIGHT:
 			{
 				tmp = CalculateOverlap(pixels, p->x, p->y, p->box.length, 0, p->box.height, 0);
-				if ((min > tmp || min == -1) && tmp != -1)
-				{
-					min = tmp;
-					corner_s = 3;
-				}
 				break;
 			}
 			default: cout << "ERROR: switch case 2" << endl; break;
+			}
+
+			// Select the corner if we got a new minimum and the minimum is not a already marked (-1) field
+			if ((min > tmp || min == -1) && tmp != -1)
+			{
+				min = tmp;
+				corner_s = corner;
 			}
 
 			if (DEBUG)
 				cout << min << " tmp " << tmp << endl;
 		}
 
-		// TODO wiederhole das wenn du keine overlaps hast nem den ding
-		if (min != -1)
+		// TODO wiederhole den Schritt in dem man testet ob ein Kasten vorliegt ohne Overlaps
+		if (min != -1 && min < 50000.0)
 		{
-			p->has_box = true;
+			p->box.corner = (CORNER) corner_s;
 
 			switch (corner_s)
 			{
-				// Ecke links unten
-			case 0:
+			// Lower left corner
+			case BOT_LEFT:
 			{
 				p->box.x = p->x;
 				p->box.y = p->y + p->box.height;
 				break;
 			}
-			// Ecke links oben
-			case 1:
+			// Upper left corner
+			case TOP_LEFT:
 			{
 				p->box.x = p->x;
 				p->box.y = p->y;
 				break;
 			}
-			// Ecke rechts oben
-			case 2:
+			// Upper right corner
+			case TOP_RIGHT:
 			{
 				p->box.x = p->x - p->box.length;
 				p->box.y = p->y;
 				break;
 			}
-			// Ecke rechts unten
-			case 3:
+			// Lower right corner
+			case BOT_RIGHT:
 			{
 				p->box.x = p->x - p->box.length;
 				p->box.y = p->y + p->box.height;
@@ -360,17 +370,10 @@ bool Problem::GeneratorArray(int index)
 		if (DEBUG)
 			WriteToBMP(count, pixels);
 
-		int l = p->box.length;
-		int h = p->box.height;
-		for (int x = (p->x - l) + middle_x; x < (p->x + l) + middle_x; x++) {
-			for (int y = (p->y - h) + middle_y; y < (p->y + h) + middle_y; y++) {
+		// Clean up the boxes of this point
+		CleanPointArea(*p, pixels);
 
-				element = y * data_w + x;
-				if (pixels[element] != -1)
-					pixels[element] = pixels[element] - intensity;
-			}
-		}
-
+		// Set the selected Box of this point to -1 to indicate that he is the choosen one
 		if (min != -1)
 		{
 			for (int x = p->box.x + middle_x; x < (p->box.x + p->box.length) + middle_x; x++) {
@@ -383,11 +386,38 @@ bool Problem::GeneratorArray(int index)
 		}
 	}
 
+	if (DEBUG)
+		WriteToBMP(count, pixels);
+
+	Translate(true);
+
 	opt = vector<Point>(instance->points);
 
 	delete[] pixels;
 
 	return false;
+}
+
+void Problem::Translate(bool reverse)
+{
+	vector<Point>& points = *instance->GetPoints();
+
+	int xDistance = instance->GetMiddleX();
+	int yDistance = instance->GetMiddleY();
+
+	for (int i = 0; i < points.size(); i++)
+	{
+		if (reverse)
+		{
+			points[i].x += xDistance;
+			points[i].y += yDistance;
+		}
+		else
+		{
+			points[i].x -= xDistance;
+			points[i].y -= yDistance;
+		}
+	}
 }
 
 // TODO einfach den Point mitgeben
@@ -433,32 +463,6 @@ double Problem::CalculateOverlap(int* pixels, int px, int py, int ll, int lr, in
 	return amount / (((px + lr) + middle_x - (px - ll) + middle_x) * ((py + ho) + middle_y - (py - hu) + middle_y));
 }
 
-void Problem::Clean(int* pixels)
-{
-	int middle_x = data_w / 2;
-	int middle_y = data_h / 2;
-	int element;
-
-	for (auto p = instance->points.begin(); p != instance->points.end(); p++)
-	{
-		if (!p->has_box)
-			continue;
-		/*
-		int l = p->box.length;
-		int h = p->box.height;
-		for (int x = (p->x - l) + middle_x; x < (p->x + l) + middle_x; x++) {
-			for (int y = (p->y - h) + middle_y; y < (p->y + h) + middle_y; y++) {
-
-				element = y * data_w + x;
-				if (pixels[element] != -1)
-					pixels[element] = pixels[element] - intensity;
-			}
-		}*/
-
-		CleanPointArea(*p, pixels);
-	}
-}
-
 void Problem::CleanPointArea(Point p, int* pixels)
 {
 	int middle_x = data_w / 2;
@@ -481,28 +485,26 @@ void Problem::CleanPointArea(Point p, int* pixels)
 bool Problem::Intersects(Box p1, Box p2)
 {
 	return p1.x < p2.x + p2.length && p1.x + p1.length > p2.x &&
-		p1.y > p2.y - p2.height && p1.y - p1.height < p2.y;
+		   p1.y > p2.y - p2.height && p1.y - p1.height < p2.y;
 }
 
 bool Problem::Intersects(int one, int two)
 {
 	return instance->points[one].box.x < instance->points[two].box.x + instance->points[two].box.length && instance->points[one].box.x + instance->points[one].box.length > instance->points[two].box.x &&
-		instance->points[one].box.y > instance->points[two].box.y - instance->points[two].box.height && instance->points[one].box.y - instance->points[one].box.height < instance->points[two].box.y;
+		   instance->points[one].box.y > instance->points[two].box.y - instance->points[two].box.height && instance->points[one].box.y - instance->points[one].box.height < instance->points[two].box.y;
 }
 
 int Problem::IsFeasible()
 {
-	int prev = 1;
-	for (auto it = instance->points.begin(); it != instance->points.end(); it++, prev++)
+	vector<Point>& points = *instance->GetPoints();
+	
+	for (size_t i = 0; i < points.size(); i++)
 	{
-		if (it->has_box)
+		if (points[i].HasBox())
 		{
-			for (auto it2 = instance->points.begin() + prev; it2 != instance->points.end(); it2++)
+			for (size_t j = i+1; j < points.size(); j++)
 			{
-				if (it == it2)
-					continue;
-
-				if (it2->has_box && Intersects(it->box, it2->box))
+				if (points[j].HasBox() && points[i].box.Intersects(points[j].box))
 					return 1;
 			}
 		}
@@ -511,13 +513,21 @@ int Problem::IsFeasible()
 	return 0;
 }
 
-int Problem::GetBoxCount(short which)
+int Problem::GetBoxCount(ALGORITHM which)
 {
 	int count = 0;
-	vector<Point> work = which == 0 ? instance->points : opt;
+	vector<Point> work;
+	switch (which)
+	{
+		case SIMULATED_ANNEALING:
+		case GRAPHIC: work = instance->points; break;
+		case IDIOT: work = opt; break;
+		default: return -1;
+	}
+
 	for (auto it = work.begin(); it != work.end(); it++)
 	{
-		if (it->has_box)
+		if (it->HasBox())
 			count++;
 	}
 
@@ -527,14 +537,12 @@ int Problem::GetBoxCount(short which)
 void Problem::WriteToBMP(int count, int *data)
 {
 	int dpi = 72;
-	int multiplier = (image_w / data_w) * 2;
+	unsigned char *pixels = new unsigned char[image_w * image_h * 3];
 	float screenaspect = 2.0f / ((float) image_w / (float) data_w);
-	Color *pixels = new Color[image_w * image_h];
-	int middle_x = data_w / 2;
-	int middle_y = data_h / 2;
-
 	int element;
 	int element2;
+	int middle_x = data_w / 2;
+	int middle_y = data_h / 2;
 
 	// Loop over all Pixel around the Center in the Area.
 	for (int y = middle_y - data_h / (multiplier * screenaspect); y < middle_y + data_h / (multiplier * screenaspect); y++) {
@@ -546,18 +554,28 @@ void Problem::WriteToBMP(int count, int *data)
 			{
 				for (int j = 0; j < multiplier; j++)
 				{
-					element2 = (y - (middle_y - data_h / (multiplier * screenaspect))) * multiplier * image_w + (x - (middle_x - data_w / (multiplier * screenaspect))) * multiplier + j + i * image_w;
+					element2 = ((y - (middle_y - data_h / (multiplier * screenaspect))) * multiplier * image_w +
+					         	(x - (middle_x - data_w / (multiplier * screenaspect))) * multiplier + j + i * image_w) * 3;
 
-					if (data[element] == -1)
-						pixels[element2].b = 1.0;
+					// +2 for the blue component, +1 for the green component
+					if (data[element] == -1) 
+					{
+						pixels[element2    ] = 0;
+						pixels[element2 + 1] = 0;
+						pixels[element2 + 2] = 255;
+					}
 					else
-						pixels[element2].g = data[element] / 255.0;
+					{
+						pixels[element2    ] = 0;
+						pixels[element2 + 1] = (unsigned char) data[element];
+						pixels[element2 + 2] = 0;
+					}
 				}
 			}
 		}
 	}
 
-	savebmp(("../data/tmp_solution" + std::to_string(count) + ".bmp").c_str(), image_w, image_h, dpi, pixels);
+	SaveBMP(("../data/tmp_solution" + std::to_string(count) + ".bmp").c_str(), image_w, image_h, dpi, pixels);
 
 	delete[] pixels;
 }
@@ -565,34 +583,21 @@ void Problem::WriteToBMP(int count, int *data)
 void Problem::WriteToBMP(char *filename)
 {
 	int dpi = 72;
-	int width = image_w;
-	int height = image_h;
-	int n = width * height;
-	Color *pixels = new Color[n];
+	unsigned char *pixels = new unsigned char[image_w * image_h * 3];
 	int element;
-	int r, g, b;
-	int middle_x = width / 2;
-	int middle_y = height / 2;
-	int point_size = 5;
+	int middle_x = image_w / 2;
+	int middle_y = image_h / 2;
+	int point_size = 2;
+
+	cout << "Write to BMP" << endl;
 
 	// Create completely white image
-	for (int x = 0; x < width; x++) {
-		for (int y = 0; y < height; y++) {
-			// Element position in pixels array
-			element = y * width + x;
-
-			r = 255;
-			g = 255;
-			b = 255;
-
-			pixels[element] = Color(r, g, b);
-		}
-	}
+	std::fill(pixels, pixels + image_w * image_h * 3, 255);
 
 	// Print box border and content
 	for (auto p = instance->points.begin(); p != instance->points.end(); p++)
 	{
-		if (!p->has_box)
+		if (!p->HasBox())
 			continue;
 
 		int l = p->box.length;
@@ -600,8 +605,8 @@ void Problem::WriteToBMP(char *filename)
 		for (int x = p->box.x * multiplier + middle_x; x <= (p->box.x + p->box.length) * multiplier + middle_x; x++) {
 			for (int y = (p->box.y - p->box.height) * multiplier + middle_y; y <= p->box.y * multiplier + middle_y; y++) {
 
-				element = y * width + x;
-				if (element > n)
+				element = (y * image_w + x) * 3;
+				if (element > image_w * image_h * 3)
 					continue;
 
 				if (p->box.x * multiplier == x - middle_x ||
@@ -609,18 +614,14 @@ void Problem::WriteToBMP(char *filename)
 					(p->box.y - p->box.height) * multiplier == y - middle_y ||
 					(p->box.x + p->box.length) * multiplier == x - middle_x)
 				{
-					g = 0;
-					r = 0;
-					b = 0;
-
-					pixels[element] = Color(r, g, b);
+					pixels[element    ] = 0;
+					pixels[element + 1] = 0;
+					pixels[element + 2] = 0;
 					continue;
 				}
-
-				g = 255;
-				r = 0;
-				b = 0;
-				pixels[element] = Color(r, g, b);
+				pixels[element    ] = 0;
+				pixels[element + 1] = 255;
+				pixels[element + 2] = 0;
 			}
 		}
 	}
@@ -628,20 +629,19 @@ void Problem::WriteToBMP(char *filename)
 	// Print box instance->points
 	for (auto it = opt.begin(); it != opt.end(); it++)
 	{
-		for (int x = 0; x < width; x++) {
-			for (int y = 0; y < height; y++) {
+		for (int x = 0; x < image_w; x++) {
+			for (int y = 0; y < image_h; y++) {
 				// Element position in pixels array
-				element = y * width + x;
+				element = (y * image_w + x) * 3;
 
 				if (it->x * multiplier - point_size <= x - middle_x &&
 					it->x * multiplier + point_size >= x - middle_x &&
 					it->y * multiplier + point_size >= y - middle_y &&
 					it->y * multiplier - point_size <= y - middle_y)
 				{
-					r = 255;
-					g = 0;
-					b = 0;
-					pixels[element] = Color(r, g, b);
+					pixels[element    ] = 255;
+					pixels[element + 1] = 0;
+					pixels[element + 2] = 0;
 					continue;
 				}
 			}
@@ -651,7 +651,7 @@ void Problem::WriteToBMP(char *filename)
 	string file = string(filename);
 	string::size_type pos = file.find_last_of(".");
 
-	savebmp((file.substr(0, pos) + "_solution.bmp").c_str(), width, height, dpi, pixels);
+	SaveBMP((file.substr(0, pos) + "_solution.bmp").c_str(), image_w, image_h, dpi, pixels);
 
 	delete[] pixels;
 }

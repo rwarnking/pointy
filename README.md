@@ -16,8 +16,9 @@ pointy.exe -eval <filename>
 pointy.exe -in <infile> -out <outfile> [-p] [-d|-t]
 
 -p              saves solution to <infile>_solution.bmp
--d              uses decent heuristic
--t              uses idiot heuristic
+-g              uses graphic heuristic
+-s              uses simulated annealing
+-i              uses idiot heuristic
 ```
 
 If your are using another OS than windows, you will need to configure the makefile such that is uses the 

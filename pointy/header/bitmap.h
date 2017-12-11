@@ -1,26 +1,56 @@
 #ifndef _BITMAP_H
 #define _BITMAP_H
 
+//#define WINVER 0x0501
+//#define _WIN32_WINNT 0x0501
+
+#include <windows.h>
 #include <fstream>
 #include <cmath>
 
-#include "color.h"
+static size_t GetRAM()
+{
+    typedef BOOL (WINAPI *PGMSE)(LPMEMORYSTATUSEX);
+    PGMSE pGMSE = (PGMSE) GetProcAddress( GetModuleHandle( TEXT( "kernel32.dll" ) ), TEXT( "GlobalMemoryStatusEx") );
+    if ( pGMSE != 0 )
+    {
+        MEMORYSTATUSEX mi;
+        memset( &mi, 0, sizeof(MEMORYSTATUSEX) );
+        mi.dwLength = sizeof(MEMORYSTATUSEX);
+        if ( pGMSE( &mi ) == TRUE )
+            return mi.ullTotalPhys;
+        else
+            pGMSE = 0;
+    }
+    if ( pGMSE == 0 )
+    {
+        MEMORYSTATUS mi;
+        memset( &mi, 0, sizeof(MEMORYSTATUS) );
+        mi.dwLength = sizeof(MEMORYSTATUS);
+        GlobalMemoryStatus( &mi );
+        return mi.dwTotalPhys;
+    }
+    return 0;
+}
 
-static void savebmp(const char* filename, int width, int height, int dpi, Color* data) {
+static void SaveBMP(const char* filename, int width, int height, int dpi, unsigned char* data) 
+{
     FILE *f;
-    int k = width * height;
+    int k = width * height * 3;
     int s = 4 * k;
     int filesize = 54 + s;
 
     int m = static_cast<int>(39.375);
     int ppm = dpi * m; // pixels per meter
 
-    unsigned char bmpfileheader[14] = {
+    unsigned char bmpfileheader[14] = 
+    {
         'B', 'M', 0, 0, 0, 0, 0,
          0, 0, 0, 0, 0, 0, 0
     };
 
-    unsigned char bmpinfoheader[40] = {
+    unsigned char bmpinfoheader[40] = 
+    {
         40, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 1, 0, 24, 0
     };
@@ -60,14 +90,9 @@ static void savebmp(const char* filename, int width, int height, int dpi, Color*
     fwrite(bmpfileheader, 1, 14, f);
     fwrite(bmpinfoheader, 1, 40, f);
 
-    for (int i = 0; i < k; i++) {
-        Color rgb = data[i];
-
-        double red = data[i].r * 255;
-        double green = data[i].g * 255;
-        double blue = data[i].b * 255;
-
-        unsigned char color[3] = {(char)floor(blue), (char)floor(green), (char)floor(red)};
+    for (int i = 0; i < k; i += 3)
+    {
+        unsigned char color[3] = { data[i + 2], data[i + 1], data[i] };
 
         fwrite(color, 1, 3, f);
     }

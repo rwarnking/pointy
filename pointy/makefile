@@ -20,15 +20,15 @@ CFLAGS=-o
 # Main-Targets
 #-------------------------------------------------------------------------
 
-$(PROJECT): $(PROJECT).$(EXE)
+$(PROJECT): clean $(PROJECT).$(EXE)
 	@echo Successfully compiled $(PROJECT)
 
 clean:
-	$(RM) $(PROJECT).$(EXE)
+	@IF EXIST $(PROJECT).$(EXE) $(RM) $(PROJECT).$(EXE)
 
 #-------------------------------------------------------------------------
 # Sub-Targets
 #-------------------------------------------------------------------------
 
 $(PROJECT).$(EXE):
-	$(CC) $(CFLAGS) $(PROJECT) $(HEADER) $(SOURCE)
+	@$(CC) $(CFLAGS) $(PROJECT) $(HEADER) $(SOURCE)
