@@ -4,33 +4,46 @@
 //#define WINVER 0x0501
 //#define _WIN32_WINNT 0x0501
 
-#include <windows.h>
 #include <fstream>
 #include <cmath>
 
+#ifdef _WIN32
+    #include <windows.h>
+#else
+    #include <sys/sysinfo.h>
+#endif
+
 static size_t GetRAM()
 {
-    typedef BOOL (WINAPI *PGMSE)(LPMEMORYSTATUSEX);
-    PGMSE pGMSE = (PGMSE) GetProcAddress( GetModuleHandle( TEXT( "kernel32.dll" ) ), TEXT( "GlobalMemoryStatusEx") );
-    if ( pGMSE != 0 )
+#ifdef _WIN32
+    typedef BOOL(WINAPI *PGMSE)(LPMEMORYSTATUSEX);
+    PGMSE pGMSE = (PGMSE)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), (LPCSTR) TEXT("GlobalMemoryStatusEx"));
+    if (pGMSE != 0)
     {
         MEMORYSTATUSEX mi;
-        memset( &mi, 0, sizeof(MEMORYSTATUSEX) );
+        memset(&mi, 0, sizeof(MEMORYSTATUSEX));
         mi.dwLength = sizeof(MEMORYSTATUSEX);
-        if ( pGMSE( &mi ) == TRUE )
+        if (pGMSE(&mi) == TRUE)
             return mi.ullTotalPhys;
         else
             pGMSE = 0;
     }
-    if ( pGMSE == 0 )
+    if (pGMSE == 0)
     {
         MEMORYSTATUS mi;
-        memset( &mi, 0, sizeof(MEMORYSTATUS) );
+        memset(&mi, 0, sizeof(MEMORYSTATUS));
         mi.dwLength = sizeof(MEMORYSTATUS);
-        GlobalMemoryStatus( &mi );
+        GlobalMemoryStatus(&mi);
         return mi.dwTotalPhys;
     }
     return 0;
+#else
+    struct sysinfo info;
+
+    int sysinfo(&info);
+
+    return info.totalram;
+#endif
 }
 
 static void SaveBMP(const char* filename, int width, int height, int dpi, unsigned char* data) 

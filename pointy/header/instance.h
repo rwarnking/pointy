@@ -1,16 +1,13 @@
 #ifndef _INSTANCE_H_
 #define _INSTANCE_H_
 
+#define DEBUG false
+
 #define DEBUG_MUL 10
 #define IMAGE_MUL 25
 
 #include <string>
 #include <vector>
-#include <iostream>
-#include <exception>
-#include <fstream>
-#include <cmath>
-#include <climits>
 
 enum CORNER : short
 {
@@ -36,6 +33,7 @@ public:
 
 	std::string ToString();
 	
+	void SetCorner(int px, int py, CORNER new_corner);
 	bool Intersects(Box &other);
 };
 
@@ -92,6 +90,9 @@ private:
 	void ReadFile(const char *filename, bool read_solution = false);
 	size_t ReadPointCount(std::string content);
 	void ReadPoints(std::string content, bool read_solution = false);
+
+	size_t FindSpaceOrTab(std::string content, size_t start=0);
+	size_t SkipSpacesOrTabs(std::string content, size_t start=0);
 
 	// Min/Max point values
 	int min_x, max_x;

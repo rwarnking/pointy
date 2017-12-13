@@ -1,5 +1,7 @@
 #include "../header/problem.h"
 
+#include <iostream>
+
 using namespace std;
 
 // Gebrauchshilfe

@@ -1,30 +1,28 @@
 #include "../header/instance.h"
 
+#include <iostream>
+#include <exception>
+#include <fstream>
+#include <cmath>
+#include <climits>
+#include <algorithm>
+#include <regex> // test file content
+
 using namespace std;
 
-Box::Box() :
-	x(0),
-	y(0),
-	length(0),
-	height(0),
-	label(""),
-	corner(NONE) {}
+Box::Box() : Box(0, 0, "") {}
 
-Box::Box(int w, int h, std::string s) :
-	x(0),
-	y(0),
-	length(w),
-	height(h),
-	label(s),
-	corner(NONE) {}
+Box::Box(int w, int h, std::string s) : Box(w, h, 0, 0, s) {}
 
-Box::Box(int w, int h, int xdim, int ydim, std::string s) :
-	x(xdim),
-	y(ydim),
-	length(w),
-	height(h),
-	label(s),
-	corner(NONE) {}
+Box::Box(int w, int h, int xdim, int ydim, std::string s)
+{
+	x = xdim;
+	y = ydim;
+	length = w;
+	height = h;
+	label = s;
+	corner = NONE;
+}
 
 Box::Box(const Box &other)
 {
@@ -34,6 +32,19 @@ Box::Box(const Box &other)
 	height = other.height;
 	label = other.label;
 	corner = other.corner;
+}
+
+void Box::SetCorner(int px, int py, CORNER new_corner)
+{
+	corner = new_corner;
+	switch (corner)
+	{
+		case BOT_LEFT: x = px; y = py + height; break;
+		case TOP_LEFT: x = px; y = py; break;
+		case TOP_RIGHT: x = px - length; y = py; break;
+		case BOT_RIGHT: x = px - length; y = py + height; break;
+		default: x = y = 0; break;
+	}
 }
 
 std::string Box::ToString()
@@ -73,8 +84,8 @@ bool Point::HasBox()
 
 void Point::ComputeBoxFromCoords()
 {
-	int diffx = x - box.x;
-    int diffy = y - box.y;
+	int diffx = abs(x - box.x);
+    int diffy = abs(y - box.y);
 
     if (diffx == 0 && diffy == 0)
         box.corner = TOP_LEFT;
@@ -82,7 +93,7 @@ void Point::ComputeBoxFromCoords()
         box.corner = TOP_RIGHT;
     else if (diffx == 0 && diffy > 0)
         box.corner = BOT_LEFT;
-    else if (diffx < 0 && diffy > 0)
+    else if (diffx > 0 && diffy > 0)
     	box.corner = BOT_RIGHT;
     else
     	box.corner = NONE;
@@ -170,9 +181,6 @@ int Instance::MaxY()
 
 int Instance::GetDimensionX()
 {
-	cout << "max x: " << max_x << " min x: " << min_x << " max l: " << max_l << endl;
-	cout << "max y: " << max_y << " min y: " << min_y << " max h: " << max_h << endl;
-
 	return (max_x - min_x) + max_l * 2;
 }
 
@@ -235,20 +243,20 @@ void Instance::ReadFile(const char *filename, bool read_solution)
 size_t Instance::ReadPointCount(string content)
 {
 	size_t pos = content.find("\n");
+	string sub = content.substr(0, pos);
+
 	try
 	{
-		point_count = stoi(content.substr(0, pos));
+		point_count = stoi(sub);
 	}
 	catch (invalid_argument &e)
 	{
-		cerr << "Point count not a valid argument" << endl;
-		cerr << "\t" << e.what() << endl;
+		cerr << "Point count not a valid argument: " << sub << endl;
 		// TODO exit programm (logger)
 	}
 	catch (out_of_range &e)
 	{
-		cerr << "Point count out of range" << endl;
-		cerr << "\t" << e.what() << endl;
+		cerr << "Point count out of range: " << sub << endl;
 		// TODO exit programm (logger)
 	}
 
@@ -267,22 +275,21 @@ void Instance::ReadPoints(string content, bool read_solution)
 		int vals[4] = {};
 		for (int j = 0; j < 4; j++)
 		{
-			pos = content.find(" ");
+			pos = FindSpaceOrTab(content);
 			try
 			{
 				vals[j] = stoi(content.substr(0, pos));
-				content = content.substr(pos + 1, string::npos);
+				pos = SkipSpacesOrTabs(content, pos+1);
+				content = content.substr(pos, string::npos);
 			}
 			catch (invalid_argument &e)
 			{
 				cerr << "Point " << i << " has invalid data" << endl;
-				cerr << "\t" << e.what() << endl;
 				// TODO exit programm (logger)
 			}
 			catch (out_of_range &e)
 			{
 				cerr << "Point " << i << " has data that is out of range" << endl;
-				cerr << "\t" << e.what() << endl;
 				// TODO exit programm (logger)
 			}
 		}
@@ -302,47 +309,72 @@ void Instance::ReadPoints(string content, bool read_solution)
 		else if (vals[3] < min_h) min_h = vals[3];
 
 		// Read label
-		pos = content.find(" ");
+		pos = FindSpaceOrTab(content);
 		string label = content.substr(0, pos);
-		content = content.substr(pos + 1, string::npos);
+		pos = SkipSpacesOrTabs(content, pos+1);
+		content = content.substr(pos, string::npos);
 
 		if (read_solution)
 		{
-			content = content.substr(2, string::npos);
-
-			int box_koords[2] = {};
-			for (int j = 0; j < 2; j++)
+			int box_koords[3] = {};
+			for (int j = 0; j < 3; j++)
 			{
-				pos = content.find(j == 0 ? " " : "\n");
+				pos = j == 2 ? content.find("\n") : FindSpaceOrTab(content);
 				try
 				{
 					box_koords[j] = stoi(content.substr(0, pos));
-					content = content.substr(pos + 1, string::npos);
+					//pos = SkipSpacesOrTabs(content, pos+1);
+					content = content.substr(pos+1, string::npos);
 				}
 				catch (invalid_argument &e)
 				{
 					cerr << "Point " << i << " has invalid data" << endl;
-					cerr << "\t" << e.what() << endl;
 					// TODO exit programm (logger)
 				}
 				catch (out_of_range &e)
 				{
 					cerr << "Point " << i << " has data that is out of range" << endl;
-					cerr << "\t" << e.what() << endl;
 					// TODO exit programm (logger)
 				}
 			}
-			points[i] = Point(vals[0], vals[1], Box(vals[2], vals[3], box_koords[0], box_koords[1], label));
-			points[i].ComputeBoxFromCoords();
+
+			points[i] = Point(vals[0], vals[1], Box(vals[2], vals[3], box_koords[1], box_koords[2], label));
+			if (box_koords[0] == 1)
+			{
+				points[i].ComputeBoxFromCoords();
+			}
 		}
 		else
 		{
 			points[i] = Point(vals[0], vals[1], Box(vals[2], vals[3], label));
 
 			pos = content.find("\n");
-			content = content.substr(pos + 1, string::npos);
+			content = content.substr(pos+1, string::npos);
 		}
 	}
+}
+
+size_t Instance::FindSpaceOrTab(std::string content, size_t start)
+{
+	size_t pos;
+	for (pos = start; pos < content.length(); pos++)
+	{
+		if (content[pos] == ' ' || content[pos] == '\t')
+			return pos;
+	}
+	return string::npos;
+}
+
+size_t Instance::SkipSpacesOrTabs(std::string content, size_t start)
+{
+	size_t pos;
+	for (pos = start; pos < content.length(); pos++)
+	{
+		if (content[pos] != ' ' || content[pos] != '\t')
+			return pos;
+	}
+
+	return string::npos;
 }
 
 void Instance::WriteFile(const char *filename)

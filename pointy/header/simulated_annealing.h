@@ -13,11 +13,22 @@ public:
 
     SimulatedAnnealing();
 
-    SimulatedAnnealing(size_t maxiter);
+    SimulatedAnnealing(size_t maxiter,
+                       size_t maxneighbour,
+                       size_t maxindex,
+                       size_t maxtabu,
+                       size_t maximprove,
+                       double improve,
+                       bool random_start,
+                       bool random_move);
 
     ~SimulatedAnnealing();
 
-    void SetIterations(size_t max_iter);
+    void SetIterations(size_t max);
+    
+    void SetNeighbourSearch(size_t max);
+    
+    void SetIndexSearch(size_t max);
 
     void SetInitialSolution(bool random);
 
@@ -33,9 +44,11 @@ private:
 
     void GenerateInitialSolution(std::vector<Box> &solution);
 
+    void UpdateTabuList(size_t index, short corner);
+
     CORNER GetBestOrientation(int x, int y);
 
-    CORNER NextCorner(CORNER before, short add);
+    CORNER NextCorner(CORNER before, short pos);
 
     bool UseSolution(int iter, size_t current_value, size_t next_value);
 
@@ -56,10 +69,22 @@ private:
     std::vector<Box> opt;
     size_t objective_value;
 
+    // Help stuff
+    short *tabu;
+
     // TODO other parameters
     size_t iterations;
     bool start_random;
     bool move_random;
+
+    size_t neighbour_search;
+    size_t index_search;
+    size_t max_tabu;
+    size_t tabu_count;
+
+    size_t threshold_max;
+    size_t threshold_count;
+    double threshold;
 };
 
 #endif
