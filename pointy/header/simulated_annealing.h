@@ -20,7 +20,8 @@ public:
                        size_t maximprove,
                        double improve,
                        bool random_start,
-                       bool random_move);
+                       bool random_move,
+                       bool tabu_usage);
 
     ~SimulatedAnnealing();
 
@@ -30,7 +31,11 @@ public:
     
     void SetIndexSearch(size_t max);
 
-    void SetInitialSolution(bool random);
+    void SetRandomStart(bool random);
+
+    void SetRandomMove(bool random);
+
+    void SetTabuList(bool use);
 
     size_t Solve(Instance *instance);
 
@@ -50,17 +55,19 @@ private:
 
     CORNER NextCorner(CORNER before, short pos);
 
-    bool UseSolution(int iter, size_t current_value, size_t next_value);
+    bool UseSolution(size_t iter, size_t current_value, size_t next_value);
 
     size_t ChooseNeighbour(std::vector<Box> &solution, std::vector<Box> &next, size_t current_value);
+
+    bool IsTabu(size_t index);
 
     void DeleteOneBox(std::vector<Box> &solution);
 
     bool IsFeasible(std::vector<Box> &solution);
 
-    bool IntersectsWithNone(std::vector<Box> &solution, int index);
+    bool IntersectsWithNone(std::vector<Box> &solution, size_t index);
 
-    double Cooling(int iter, size_t current_value, size_t next_value);
+    double Cooling(size_t iter, size_t current_value, size_t next_value);
 
     // Instance to solve
     Instance *instance;
@@ -73,10 +80,11 @@ private:
     short *tabu;
 
     // TODO other parameters
-    size_t iterations;
     bool start_random;
     bool move_random;
+    bool use_tabu;
 
+    size_t iterations;
     size_t neighbour_search;
     size_t index_search;
     size_t max_tabu;

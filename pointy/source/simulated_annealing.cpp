@@ -1,6 +1,6 @@
 #include "../header/simulated_annealing.h"
-
-#include <iostream>  // cout 
+#include "../header/logger.h"
+ 
 #include <random>    // random uniform distribution
 #include <algorithm> // für min() und max()
 #include <cstring>
@@ -8,8 +8,9 @@
 #define ALL_USED 15
 
 using namespace std;
+using namespace logger;
 
-SimulatedAnnealing::SimulatedAnnealing() : SimulatedAnnealing(100000, 10000, 100, 1000, 10000, 0.05, true, true) {}
+SimulatedAnnealing::SimulatedAnnealing() : SimulatedAnnealing(100000, 10000, 100, 1000, 10000, 0.05, true, false, true) {}
 
 SimulatedAnnealing::SimulatedAnnealing(size_t maxiter,
                                        size_t maxneighbour,
@@ -18,7 +19,8 @@ SimulatedAnnealing::SimulatedAnnealing(size_t maxiter,
                                        size_t maximprove,
                                        double improve,
                                        bool random_start,
-                                       bool random_move)
+                                       bool random_move,
+                                       bool tabu_usage)
 { 
     objective_value = 0;
     neighbour_search = maxneighbour;
@@ -31,6 +33,7 @@ SimulatedAnnealing::SimulatedAnnealing(size_t maxiter,
     threshold = improve;
     start_random = random_start;
     move_random = random_move;
+    use_tabu = tabu_usage;
     instance = nullptr;
     opt = vector<Box>();
     tabu = nullptr;
@@ -60,33 +63,43 @@ void SimulatedAnnealing::SetIndexSearch(size_t max)
     index_search = max;
 }
 
-void SimulatedAnnealing::SetInitialSolution(bool random)
+void SimulatedAnnealing::SetRandomStart(bool random)
 {
     start_random = random;
 }
 
+void SimulatedAnnealing::SetRandomMove(bool random)
+{
+    move_random = random;
+}
+
+void SimulatedAnnealing::SetTabuList(bool use)
+{
+    use_tabu = use;
+}
+
 void SimulatedAnnealing::PrintParameters()
 {
-    cout << "\nSimulated Annealing:" << endl;
-    cout << "\t objective_value   = " << objective_value << endl;
-    cout << "\t start random      = " << (start_random ? "true" : "false") << endl;
-    cout << "\t move random       = " << (move_random ? "true" : "false") << endl;
-    cout << "\t max iterations    = " << iterations << endl;
-    cout << "\t neighbour search  = " << neighbour_search << endl;
-    cout << "\t threshold         = " << threshold << endl;
-    cout << "\t threshold count   = " << threshold_count << endl;
-    cout << "\t max threshold     = " << threshold_max << endl;
-    cout << "\t tabu count        = " << tabu_count << endl;
-    cout << "\t max tabu          = " << max_tabu << endl << endl;
+    Logger::Println(LEVEL::DEBUG, "\nSimulated Annealing:");
+    Logger::Println(LEVEL::DEBUG, "\t objective_value   = ", objective_value);
+    Logger::Println(LEVEL::DEBUG, "\t start random      = ", (start_random ? "true" : "false"));
+    Logger::Println(LEVEL::DEBUG, "\t move random       = ", (move_random ? "true" : "false"));
+    Logger::Println(LEVEL::DEBUG, "\t max iterations    = ", iterations);
+    Logger::Println(LEVEL::DEBUG, "\t neighbour search  = ", neighbour_search);
+    Logger::Println(LEVEL::DEBUG, "\t threshold         = ", threshold);
+    Logger::Println(LEVEL::DEBUG, "\t threshold count   = ", threshold_count);
+    Logger::Println(LEVEL::DEBUG, "\t max threshold     = ", threshold_max);
+    Logger::Println(LEVEL::DEBUG, "\t tabu count        = ", tabu_count);
+    Logger::Println(LEVEL::DEBUG, "\t max tabu          = ", max_tabu , "\n");
 
 }
 
 size_t SimulatedAnnealing::Solve(Instance *problem_instance)
 {
-    if (index_search > 2*problem_instance->point_count)
-        index_search = 2*problem_instance->point_count;
+    if (index_search > 2*problem_instance->GetPointCount())
+        index_search = 2*problem_instance->GetPointCount();
 
-    if (DEBUG) PrintParameters();
+    PrintParameters();
 
     instance = problem_instance;
 
@@ -109,7 +122,7 @@ size_t SimulatedAnnealing::Solve(Instance *problem_instance)
     size_t next_value, iter;
     size_t current_value = objective_value;
 
-    if (DEBUG) cout << "\nInitial value: " << objective_value << endl;
+    Logger::Println(LEVEL::DEBUG, "\nInitial value: ", objective_value);
 
     // Main loop
     for (iter = 0; !StopIteration(iter); iter++) {
@@ -138,14 +151,14 @@ size_t SimulatedAnnealing::Solve(Instance *problem_instance)
         }
     }
 
-    if (DEBUG) cout << "Iterations: " << iter << endl;
+    Logger::Println(LEVEL::DEBUG, "\nIterations: ", iter);
 
     ConstructSolution();
 
     return objective_value;
 }
 
-bool SimulatedAnnealing::UseSolution(int iter, size_t current_value, size_t next_value)
+bool SimulatedAnnealing::UseSolution(size_t iter, size_t current_value, size_t next_value)
 {
     default_random_engine gen;
     uniform_real_distribution<double> dis(0.0, 1.0);
@@ -157,19 +170,19 @@ void SimulatedAnnealing::ConstructSolution()
 {
     vector<Point> &points = *instance->GetPoints();
 
-    cout << endl;
+    Logger::Println(LEVEL::DEBUG);
     for (size_t i = 0; i < opt.size(); i++)
     {
         points[i].box.x = opt[i].x;
         points[i].box.y = opt[i].y;
         points[i].box.corner = opt[i].corner;
     }
-    cout << endl;
+    Logger::Println(LEVEL::DEBUG);
 }
 
 bool SimulatedAnnealing::StopIteration(size_t iter)
 {
-    return objective_value == instance->point_count || iter >= iterations || threshold_count >= threshold_max;
+    return objective_value == instance->GetPointCount() || iter >= iterations || threshold_count >= threshold_max;
 }
 
 void SimulatedAnnealing::GenerateInitialSolution(std::vector<Box> &solution)
@@ -186,7 +199,8 @@ void SimulatedAnnealing::GenerateInitialSolution(std::vector<Box> &solution)
         if (IntersectsWithNone(solution, i))
         {
             ++objective_value;
-            UpdateTabuList(i, solution[i].corner);
+            if (use_tabu)
+                UpdateTabuList(i, solution[i].corner);
         }
         else
         {
@@ -201,7 +215,7 @@ void SimulatedAnnealing::UpdateTabuList(size_t index, short corner)
     if (tabu_count == max_tabu)
     {
         tabu_count = 1;
-        fill_n(tabu, instance->point_count, 0);
+        fill_n(tabu, instance->GetPointCount(), 0);
     }
 
     if (tabu[index] != ALL_USED)
@@ -221,21 +235,40 @@ CORNER SimulatedAnnealing::GetBestOrientation(int x, int y)
 
 size_t SimulatedAnnealing::ChooseNeighbour(std::vector<Box> &solution, std::vector<Box> &next, size_t current_value)
 {
-    if (current_value == solution.size())
-        return 0;
-
     vector<Point> &points = *instance->GetPoints();
+
+    int index = 0;
+    bool found = false;
+    size_t solution_value = current_value;
+    CORNER tmp_corner = NONE;
+    CORNER before = solution[index].corner;
 
     if (move_random)
     {
+
+        int i = 0;
+        do
+        {
+            index = rand() % solution.size();
+        } while (solution[index].corner == before && ++i < index_search);
+
+        before = solution[index].corner;
+        do
+        {
+            tmp_corner = (CORNER) (rand() % (NONE+1));
+        } while (tmp_corner == before && !IsTabu(index));
+
+        solution[index].SetCorner(points[index].x, points[index].y, tmp_corner);
+        
+        if (use_tabu)
+            UpdateTabuList(index, tmp_corner);
+        if (before == NONE && IntersectsWithNone(next, index))
+            solution_value++;
+    }
+    else
+    {
         // TODO: for some reason this does not work, dont ask me why FML
         //uniform_int_distribution<int> dis_index(0, solution.size()-1);
-
-        int index = 0;
-        bool found = false;
-        size_t solution_value = current_value;
-        CORNER tmp_corner = NONE;
-        CORNER before = solution[index].corner;
         
         for (int i = 0, j = 0; i < neighbour_search && !found; i++)
         {
@@ -247,14 +280,16 @@ size_t SimulatedAnnealing::ChooseNeighbour(std::vector<Box> &solution, std::vect
             do {
                 index = rand() % solution.size(); //dis_index(gen);
                 j++;
-            } while ((solution[index].corner != NONE || tabu[index] == ALL_USED) && j < index_search);
+            } while ((solution[index].corner != NONE || !IsTabu(index)) && j < index_search);
             
             // Set label corner to sth different than before
             before = solution[index].corner;
             tmp_corner = NextCorner(before, tabu[index]);
             
             next[index].SetCorner(points[index].x, points[index].y, tmp_corner);
-            UpdateTabuList(index, tmp_corner);
+            
+            if (use_tabu)
+                UpdateTabuList(index, tmp_corner);
             if (IntersectsWithNone(next, index))
                 found = true;
         }
@@ -268,15 +303,14 @@ size_t SimulatedAnnealing::ChooseNeighbour(std::vector<Box> &solution, std::vect
             DeleteOneBox(solution);
             solution_value--;
         }
-
-        return solution_value;
-    }
-    else
-    {
-        // TODO: do sth smarter
     }
 
-    return 0;
+    return solution_value;
+}
+
+bool SimulatedAnnealing::IsTabu(size_t index)
+{
+    return use_tabu && tabu[index] == ALL_USED;
 }
 
 void SimulatedAnnealing::DeleteOneBox(std::vector<Box> &solution)
@@ -299,7 +333,7 @@ CORNER SimulatedAnnealing::NextCorner(CORNER before, short pos)
     bool tmp[4] = { false, false, false, false };
     for (short i = 0; i < 4; i++)
     {
-        tmp[i] = pos & mask == mask;
+        tmp[i] = (pos & mask) == mask;
         pos = pos >> 1;
         mask = mask >> 1;
     }
@@ -313,7 +347,7 @@ CORNER SimulatedAnnealing::NextCorner(CORNER before, short pos)
     return before;
 }
 
-bool SimulatedAnnealing::IntersectsWithNone(std::vector<Box> &solution, int index)
+bool SimulatedAnnealing::IntersectsWithNone(std::vector<Box> &solution, size_t index)
 {
     for (int i = 0; i < solution.size(); i++)
     {
@@ -324,7 +358,7 @@ bool SimulatedAnnealing::IntersectsWithNone(std::vector<Box> &solution, int inde
     return true;
 }
 
-double SimulatedAnnealing::Cooling(int iter, size_t current_value, size_t next_value)
+double SimulatedAnnealing::Cooling(size_t iter, size_t current_value, size_t next_value)
 {
     double denom = pow((double) iter, 2.0);
 

@@ -68,7 +68,7 @@ static void SaveBMP(const char* filename, int width, int height, int dpi, unsign
         0, 0, 0, 0, 1, 0, 24, 0
     };
 
-    // Unsure about this implementation - read more about bitmap creading
+    // Unsure about this implementation - read more about bitmap creation
     bmpfileheader[2] = (unsigned char)(filesize);
     bmpfileheader[3] = (unsigned char)(filesize >> 8);
     bmpfileheader[4] = (unsigned char)(filesize >> 16);
@@ -99,17 +99,26 @@ static void SaveBMP(const char* filename, int width, int height, int dpi, unsign
     bmpinfoheader[31] = (unsigned char)(ppm >> 16);
     bmpinfoheader[32] = (unsigned char)(ppm >> 24);
 
-    fopen_s(&f, filename, "wb");
-    fwrite(bmpfileheader, 1, 14, f);
-    fwrite(bmpinfoheader, 1, 40, f);
-
-    for (int i = 0; i < k; i += 3)
+    errno_t err = fopen_s(&f, filename, "wb");
+    
+    if (err != 0)
     {
-        unsigned char color[3] = { data[i + 2], data[i + 1], data[i] };
-
-        fwrite(color, 1, 3, f);
+        return;
     }
-    fclose(f);
+    else if (f)
+    {
+        fwrite(bmpfileheader, 1, 14, f);
+        fwrite(bmpinfoheader, 1, 40, f);
+
+        for (int i = 0; i < k; i += 3)
+        {
+            unsigned char color[3] = { data[i + 2], data[i + 1], data[i] };
+
+            fwrite(color, 1, 3, f);
+        }
+
+        fclose(f);
+    }
 }
 
 #endif

@@ -1,14 +1,14 @@
 #include "../header/instance.h"
+#include "../header/logger.h"
 
-#include <iostream>
 #include <exception>
 #include <fstream>
 #include <cmath>
 #include <climits>
 #include <algorithm>
-#include <regex> // test file content
 
 using namespace std;
+using namespace logger;
 
 Box::Box() : Box(0, 0, "") {}
 
@@ -149,7 +149,7 @@ Instance::~Instance()
 	points.clear();
 }
 
-int Instance::GetPointCount()
+size_t Instance::GetPointCount()
 {
 	return point_count;
 }
@@ -229,14 +229,12 @@ void Instance::ReadFile(const char *filename, bool read_solution)
 		}
 		else
 		{
-			cerr << "Error occurred while trying to read file: " << filename << endl;
-			exit(-1);
+			Logger::Println(LEVEL::ERR, "ERR occurred while trying to read file: ", filename);
 		}
 	}
-	catch (exception &e)
+	catch (exception)
 	{
-		cerr << "Error occurred while trying to read file: " << filename << endl;
-		cerr << "\t" << e.what() << endl;
+		Logger::Println(LEVEL::ERR, "ERR occurred while trying to read file: ", filename);
 	}
 }
 
@@ -249,14 +247,14 @@ size_t Instance::ReadPointCount(string content)
 	{
 		point_count = stoi(sub);
 	}
-	catch (invalid_argument &e)
+	catch (invalid_argument)
 	{
-		cerr << "Point count not a valid argument: " << sub << endl;
+		Logger::Println(LEVEL::ERR, "Point count not a valid argument: ", sub);
 		// TODO exit programm (logger)
 	}
-	catch (out_of_range &e)
+	catch (out_of_range)
 	{
-		cerr << "Point count out of range: " << sub << endl;
+		Logger::Println(LEVEL::ERR, "Point count out of range: ", sub);
 		// TODO exit programm (logger)
 	}
 
@@ -282,31 +280,39 @@ void Instance::ReadPoints(string content, bool read_solution)
 				pos = SkipSpacesOrTabs(content, pos+1);
 				content = content.substr(pos, string::npos);
 			}
-			catch (invalid_argument &e)
+			catch (invalid_argument)
 			{
-				cerr << "Point " << i << " has invalid data" << endl;
+				Logger::Println(LEVEL::ERR, "Point ", i, " has invalid data");
 				// TODO exit programm (logger)
 			}
-			catch (out_of_range &e)
+			catch (out_of_range)
 			{
-				cerr << "Point " << i << " has data that is out of range" << endl;
+				Logger::Println(LEVEL::ERR, "Point ", i, " has data that is out of range");
 				// TODO exit programm (logger)
 			}
 		}
 
 		// Check min and max x value
-		if (vals[0] > max_x) max_x = vals[0];
-		else if (vals[0] < min_x) min_x = vals[0];
+		if (vals[0] > max_x) 
+			max_x = vals[0];
+		if (vals[0] < min_x) 
+			min_x = vals[0];
 		// Check min and max y value
-		if (vals[1] > max_y) max_y = vals[1];
-		else if (vals[1] < min_y) min_y = vals[1];
+		if (vals[1] > max_y) 
+			max_y = vals[1];
+		if (vals[1] < min_y) 
+			min_y = vals[1];
 
 		// Check min and max box length
-		if (vals[2] > max_l) max_l = vals[2];
-		else if (vals[2] < min_l) min_l = vals[2];
+		if (vals[2] > max_l) 
+			max_l = vals[2];
+		if (vals[2] < min_l) 
+			min_l = vals[2];
 		// Check min and max box height
-		if (vals[3] > max_h) max_h = vals[3];
-		else if (vals[3] < min_h) min_h = vals[3];
+		if (vals[3] > max_h) 
+			max_h = vals[3];
+		if (vals[3] < min_h) 
+			min_h = vals[3];
 
 		// Read label
 		pos = FindSpaceOrTab(content);
@@ -326,23 +332,22 @@ void Instance::ReadPoints(string content, bool read_solution)
 					//pos = SkipSpacesOrTabs(content, pos+1);
 					content = content.substr(pos+1, string::npos);
 				}
-				catch (invalid_argument &e)
+				catch (invalid_argument)
 				{
-					cerr << "Point " << i << " has invalid data" << endl;
+					Logger::Println(LEVEL::ERR, "Point ", i, " has invalid data");
 					// TODO exit programm (logger)
 				}
-				catch (out_of_range &e)
+				catch (out_of_range)
 				{
-					cerr << "Point " << i << " has data that is out of range" << endl;
+					Logger::Println(LEVEL::ERR, "Point ", i, " has data that is out of range");
 					// TODO exit programm (logger)
 				}
 			}
 
 			points[i] = Point(vals[0], vals[1], Box(vals[2], vals[3], box_koords[1], box_koords[2], label));
+			
 			if (box_koords[0] == 1)
-			{
 				points[i].ComputeBoxFromCoords();
-			}
 		}
 		else
 		{
@@ -392,12 +397,11 @@ void Instance::WriteFile(const char *filename)
 		}
 		else
 		{
-			cerr << "Error opening writing stream" << endl;
+			Logger::Println(LEVEL::ERR, "ERR opening writing stream");
 		}
 	}
-	catch (exception &e)
+	catch (exception)
 	{
-		cerr << "Error occurred while trying to write file: " << filename << endl;
-		cerr << "\t" << e.what() << endl;
+		Logger::Println(LEVEL::ERR, "ERR occurred while trying to write file: ", filename);
 	}
 }

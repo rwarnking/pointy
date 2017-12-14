@@ -1,11 +1,6 @@
 #ifndef _INSTANCE_H_
 #define _INSTANCE_H_
 
-#define DEBUG false
-
-#define DEBUG_MUL 10
-#define IMAGE_MUL 25
-
 #include <string>
 #include <vector>
 
@@ -64,7 +59,7 @@ public:
 	Instance(std::vector<Point> *p);
 	~Instance();
 
-	int GetPointCount();
+	size_t GetPointCount();
 	std::vector<Point>* GetPoints();
 
 	int MaxX();

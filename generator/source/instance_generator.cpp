@@ -11,7 +11,7 @@ int main(int argc, char **argv)
             int points = stoi(argv[2]);
             GenerateInstance(argv[1], points);
         }
-        catch(exception &e)
+        catch(exception)
         {
             cerr << "ERROR: invalid point count" << endl;
         }
@@ -37,7 +37,7 @@ int main(int argc, char **argv)
 
             GenerateInstance(argv[1], points, min, max, even);
         }
-        catch(exception &e)
+        catch(exception)
         {
             cerr << "ERROR: invalid point count" << endl;
         }
@@ -69,7 +69,7 @@ void GenerateInstance(const char *filename, int point_count, int min, int max, b
     {
         default_random_engine gen;
         uniform_int_distribution<int> pdis(min, max);
-        uniform_int_distribution<int> bdis(1+abs(max-min)*0.05, 1+abs(max-min)*0.2);
+        uniform_int_distribution<int> bdis((int) (1+abs(max-min)*0.05f), (int) (1+abs(max-min)*0.2f));
         for (int i = 0; i < point_count; i++)
         {
             int x = pdis(gen);
@@ -82,9 +82,9 @@ void GenerateInstance(const char *filename, int point_count, int min, int max, b
     }
     else
     {
-        srand(time(0));
-        int rangeMax = (abs(max-min) * 0.2f) + 1;
-        int rangeMin = abs(max-min) * 0.05f;
+        srand((unsigned int) time(0));
+        int rangeMax = (int) (abs(max-min) * 0.2f) + 1;
+        int rangeMin = (int) (abs(max-min) * 0.05f);
         int range = abs(max-min) + 1;
 
         for (int i = 0; i < point_count; i++)

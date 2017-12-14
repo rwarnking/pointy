@@ -1,18 +1,18 @@
 #include "../header/problem.h"
-
-#include <iostream>
+#include "../header/logger.h"
 
 using namespace std;
+using namespace logger;
 
 // Gebrauchshilfe
 void PrintHelp(void)
 {
-	cout << "This is the help function." << endl;
-	cout << "This program enables you to evaluate or generate a solution for the Labeling Problem." << endl;
-	cout << "The evaluation process can be started by writing: 'pointy -eval filename.txt' " << endl;
-	cout << "The generation process can be started by writing: 'pointy -in inputfilename.txt -out outputfilename.txt' " << endl;
-	cout << "The generation process can be started and exported to a bmp by writing: 'pointy -in inputfilename.txt -out outputfilename.txt -p' " << endl;
-	cout << "The related files will be generated in the data-folder. Therefore the inputfiles should be located in the same folder." << endl;
+	Logger::Println(LEVEL::INFO, "This is the help function.");
+	Logger::Println(LEVEL::INFO, "This program enables you to evaluate or generate a solution for the Labeling Problem.");
+	Logger::Println(LEVEL::INFO, "The evaluation process can be started by writing: 'pointy -eval filename.txt' ");
+	Logger::Println(LEVEL::INFO, "The generation process can be started by writing: 'pointy -in inputfilename.txt -out outputfilename.txt' ");
+	Logger::Println(LEVEL::INFO, "The generation process can be started and exported to a bmp by writing: 'pointy -in inputfilename.txt -out outputfilename.txt -p' ");
+	Logger::Println(LEVEL::INFO, "The related files will be generated in the data-folder. Therefore the inputfiles should be located in the same folder.");
 }
 
 void ParseFlags(char **argv, int argc, bool &print, ALGORITHM &algorithm)
@@ -33,6 +33,8 @@ void ParseFlags(char **argv, int argc, bool &print, ALGORITHM &algorithm)
 
 int main(int argc, char **argv)
 {
+	//Logger::SetLogLevel(INFO);
+
 	Problem prob = Problem();
 
 	if (argc == 3)
@@ -43,8 +45,7 @@ int main(int argc, char **argv)
 		}
 		else
 		{
-			cout << "Invalid input parameters using '-eval'" << endl;
-			PrintHelp();
+			Logger::Println(LEVEL::ERR ,"Invalid input parameters using '-eval'");
 		}
 	}
 	else if (argc == 5)
@@ -55,8 +56,7 @@ int main(int argc, char **argv)
 		}
 		else
 		{
-			cout << "Invalid input parameters using '-in' and '-out'" << endl;
-			PrintHelp();
+			Logger::Println(LEVEL::ERR, "Invalid input parameters using '-in' and '-out'");
 		}
 	}
 	else if (argc >= 6)
@@ -71,8 +71,7 @@ int main(int argc, char **argv)
 		}
 		else
 		{
-			cout << "Invalid input parameters using '-in' and '-out'" << endl;
-			PrintHelp();
+			Logger::Println(LEVEL::ERR, "Invalid input parameters using '-in' and '-out'");
 		}
 	}
 	else

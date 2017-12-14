@@ -1,14 +1,15 @@
 #include "../header/problem.h"
 #include "../header/bitmap.h"
 #include "../header/simulated_annealing.h"
+#include "../header/logger.h"
 
-#include <iostream>
 #include <string>
 #include <algorithm>
 #include <chrono>
 #include <cfloat>
 
 using namespace std;
+using namespace logger;
 
 Problem::Problem()
 {
@@ -27,9 +28,9 @@ void Problem::CheckSolution(char *infile)
 	// Check solution
 	switch (IsFeasible())
 	{
-		case 0: cout << GetBoxCount(GRAPHIC) << endl; break;
-		case 1: cout << "ERROR: found overlapping labels" << endl; break;
-		default: cout << "ERROR: unknown problem" << endl;
+		case 0: Logger::Println(LEVEL::INFO, GetBoxCount(GRAPHIC)); break;
+		case 1: Logger::Println(LEVEL::ERR, "ERR: found overlapping labels"); break;
+		default: Logger::Println(LEVEL::ERR, "ERR: unknown problem");
 	}
 }
 
@@ -62,17 +63,20 @@ void Problem::GenerateSolution(char *infile, char *outfile, bool print, ALGORITH
 		case SIMULATED_ANNEALING:
 		{
 			SimulatedAnnealing solver = SimulatedAnnealing();
-			solver.SetIterations(min(instance->point_count*10, (size_t)500000));
+			solver.SetIterations(min(instance->GetPointCount()*100, (size_t)500000));
+			solver.SetRandomMove(false);
+			solver.SetTabuList(true);
+			solver.SetRandomStart(false);
 			objective_value = solver.Solve(instance);
 		} break;
-		default: cout << "Invalid algorithm parameter" << endl;
+		default: Logger::Println(LEVEL::ERR, "Invalid algorithm parameter");
 	}
 
 	// Take time
 	chrono::steady_clock::time_point end = chrono::steady_clock::now();
 
 	//WriteToConsole();
-	cout << objective_value << "\t" << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " ms" << endl;
+	Logger::Println(LEVEL::INFO, objective_value, "\t", chrono::duration_cast<chrono::milliseconds>(end - start).count(), " ms");
 
 	if (print)
 		WriteToBMP(outfile);
@@ -86,19 +90,7 @@ void Problem::SimpleSolve()
 
 	for (size_t i = 0; i < points.size(); i++)
 	{
-		points[i].box.corner = GetBestOrientation(points[i].x, points[i].y);
-		switch (points[i].box.corner)
-		{
-			// Lower left corner
-			case BOT_LEFT: points[i].box.x = points[i].x; points[i].box.y = points[i].y + points[i].box.height; break;
-			// Upper left corner
-			case TOP_LEFT: points[i].box.x = points[i].x; points[i].box.y = points[i].y; break;
-			// Upper right corner
-			case TOP_RIGHT: points[i].box.x = points[i].x - points[i].box.length; points[i].box.y = points[i].y; break;
-			// Lower right corner
-			case BOT_RIGHT: points[i].box.x = points[i].x - points[i].box.length; points[i].box.y = points[i].y + points[i].box.height; break;
-			default: cout << "error" << endl; break;
-		}
+		points[i].box.SetCorner(points[i].x, points[i].y, GetBestOrientation(points[i].x, points[i].y));
 		for (size_t j = 0; j < i; j++)
 		{
 			if (Intersects(points[i].box, points[j].box))
@@ -123,7 +115,7 @@ CORNER Problem::GetBestOrientation(int x, int y)
 
 bool Problem::Generator(int index)
 {
-	int point_count = instance->point_count;
+	size_t point_count = instance->GetPointCount();
 
 	int tmp1 = GetBoxCount();
 	int tmp2 = GetBoxCount(GRAPHIC);
@@ -152,7 +144,7 @@ bool Problem::Generator(int index)
 			// Lower right corner
 			case BOT_RIGHT: p->box.x = p->x - p->box.length; p->box.y = p->y + p->box.height; break;
 			case NONE: p->box.corner = NONE; return Generator(index + 1);
-			default: cout << "error" << endl; break;
+			default: Logger::Println(LEVEL::ERR, "ERR ocurred when assigning corner: ", corner); break;
 		}
 
 		bool intersects = false;
@@ -185,7 +177,7 @@ bool Problem::GeneratorArray(int index)
 
 	Translate();
 
-	if (DEBUG || true)
+	if (Logger::LogLevel() == DEBUG || true)
 		SetMultiplier();
 
 	// Loop through all Elements and mark the boxpositions
@@ -266,7 +258,7 @@ bool Problem::GeneratorArray(int index)
 				}
 				break;
 			}
-			default: cout << "ERROR: switch case 1 " << endl; break;
+			default: Logger::Println(LEVEL::ERR, "ERR: switch case 1 "); break;
 			}
 
 			if (found)
@@ -318,7 +310,7 @@ bool Problem::GeneratorArray(int index)
 				tmp = CalculateOverlap(pixels, p->x, p->y, p->box.length, 0, p->box.height, 0);
 				break;
 			}
-			default: cout << "ERROR: switch case 2" << endl; break;
+			default: Logger::Println(LEVEL::ERR, "ERR: switch case 2"); break;
 			}
 
 			// Select the corner if we got a new minimum and the minimum is not a already marked (-1) field
@@ -364,11 +356,11 @@ bool Problem::GeneratorArray(int index)
 				p->box.y = p->y + p->box.height;
 				break;
 			}
-			default: cout << "error" << endl; break;
+			default: Logger::Println(LEVEL::ERR, "ERR"); break;
 			}
 		}
 
-		if (DEBUG)
+		if (Logger::LogLevel() == DEBUG)
 			WriteToBMP(count, pixels);
 
 		// Clean up the boxes of this point
@@ -387,7 +379,7 @@ bool Problem::GeneratorArray(int index)
 		}
 	}
 
-	if (DEBUG)
+	if (Logger::LogLevel() == DEBUG)
 		WriteToBMP(count, pixels);
 
 	Translate(true);
@@ -616,8 +608,8 @@ void Problem::WriteToBMP(char *filename)
 
 	SetMultiplier();
 
-	int x_distance = instance->GetMiddleX() * (((float)image_w / (float)data_w) / 1.2);
-	int y_distance = instance->GetMiddleY() * (((float)image_h / (float)data_h) / 1.2);
+	int x_distance = (int) (instance->GetMiddleX() * (((float) image_w / (float) data_w) / 1.2));
+	int y_distance = (int) (instance->GetMiddleY() * (((float) image_h / (float) data_h) / 1.2));
 
 	multiplier /= 1.2;
 
@@ -641,8 +633,8 @@ void Problem::WriteToBMP(char *filename)
 
 		int l = p->box.length;
 		int h = p->box.height;
-		for (int x = p->box.x * multiplier + middle_x - x_distance; x <= (p->box.x + p->box.length) * multiplier + middle_x - x_distance; x++) {
-			for (int y = (p->box.y - p->box.height) * multiplier + middle_y - y_distance; y <= p->box.y * multiplier + middle_y - y_distance; y++) {
+		for (int x = (int) (p->box.x * multiplier + middle_x - x_distance); x <= (p->box.x + p->box.length) * multiplier + middle_x - x_distance; x++) {
+			for (int y = (int) ((p->box.y - p->box.height) * multiplier + middle_y - y_distance); y <= p->box.y * multiplier + middle_y - y_distance; y++) {
 
 				element = (y * image_w + x) * 3;
 				if (element + 3 > image_w * image_h * 3 || element < 0)
@@ -671,8 +663,8 @@ void Problem::WriteToBMP(char *filename)
 	// Print the Points
 	for (auto p = instance->points.begin(); p != instance->points.end(); p++)
 	{
-		for (int x = p->x * multiplier + middle_x - point_size - x_distance; x <= p->x * multiplier + middle_x + point_size - x_distance; x++) {
-			for (int y = p->y * multiplier + middle_y - point_size - y_distance; y <= p->y * multiplier + middle_y + point_size - y_distance; y++) {
+		for (int x = (int) (p->x * multiplier + middle_x - point_size - x_distance); x <= p->x * multiplier + middle_x + point_size - x_distance; x++) {
+			for (int y = (int) (p->y * multiplier + middle_y - point_size - y_distance); y <= p->y * multiplier + middle_y + point_size - y_distance; y++) {
 
 				element = (y * image_w + x) * 3;
 				if (element + 3 > image_w * image_h * 3 || element < 0)
