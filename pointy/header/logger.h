@@ -84,7 +84,7 @@ namespace logger
 
     private:
         
-        static const LEVEL loglevel = DEBUG;
+        static const LEVEL loglevel = INFO;
 
     };
 }

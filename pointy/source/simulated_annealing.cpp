@@ -125,8 +125,8 @@ size_t SimulatedAnnealing::Solve(Instance *problem_instance)
     Logger::Println(LEVEL::DEBUG, "\nInitial value: ", objective_value);
 
     // Main loop
-    for (iter = 0; !StopIteration(iter); iter++) {
-
+    for (iter = 0; !StopIteration(iter); iter++)
+    {
         // Generate next solution
         vector<Box> next = work;
         next_value = ChooseNeighbour(work, next, current_value);
@@ -235,6 +235,9 @@ CORNER SimulatedAnnealing::GetBestOrientation(int x, int y)
 
 size_t SimulatedAnnealing::ChooseNeighbour(std::vector<Box> &solution, std::vector<Box> &next, size_t current_value)
 {
+    if (current_value == solution.size())
+        return current_value;
+
     vector<Point> &points = *instance->GetPoints();
 
     int index = 0;
@@ -280,7 +283,7 @@ size_t SimulatedAnnealing::ChooseNeighbour(std::vector<Box> &solution, std::vect
             do {
                 index = rand() % solution.size(); //dis_index(gen);
                 j++;
-            } while ((solution[index].corner != NONE || !IsTabu(index)) && j < index_search);
+            } while ((solution[index].corner != NONE || IsTabu(index)) && j < index_search);
             
             // Set label corner to sth different than before
             before = solution[index].corner;
