@@ -16,6 +16,11 @@ Problem::Problem()
 	instance = new Instance();
 }
 
+Problem::Problem(char *instance_file)
+{
+	instance = new Instance(instance_file);
+}
+
 Problem::~Problem()
 {
 	delete instance;
@@ -34,15 +39,8 @@ void Problem::CheckSolution(char *infile)
 	}
 }
 
-// Read problem in 'infile', then generate solution(s) and
-// write the solution to 'outfile'
-void Problem::GenerateSolution(char *infile, char *outfile, bool print, ALGORITHM algorithm)
+size_t Problem::Solve(ALGORITHM algorithm)
 {
-	instance = new Instance(infile);
-
-	// Take time
-	chrono::steady_clock::time_point start = chrono::steady_clock::now();
-
 	// Sort from smallest to biggest box
 	sort(instance->points.begin(), instance->points.end(), [](Point &p1, Point &p2) { return p1.box.length * p1.box.height < p2.box.length * p2.box.height; });
 
@@ -63,14 +61,36 @@ void Problem::GenerateSolution(char *infile, char *outfile, bool print, ALGORITH
 		case SIMULATED_ANNEALING:
 		{
 			SimulatedAnnealing solver = SimulatedAnnealing();
-			solver.SetIterations(min(instance->GetPointCount()*100, (size_t)500000));
-			solver.SetRandomMove(false);
-			solver.SetTabuList(true);
-			solver.SetRandomStart(false);
+			solver.SetIterations(min(instance->GetPointCount()*1000, (size_t)500000));
+			
+			// Config 1
+			// solver.SetRandomMove(false);
+			// solver.SetTabuList(true);
+			// solver.SetRandomStart(false);
+			
+			// Config 2
+			solver.SetRandomMove(true);
+			solver.SetTabuList(false);
+			solver.SetRandomStart(true);
+
 			objective_value = solver.Solve(instance);
 		} break;
-		default: Logger::Println(LEVEL::ERR, "Invalid algorithm parameter");
+		default: Logger::Println(LEVEL::ERR, "ERROR: Invalid algorithm parameter");
 	}
+	
+	return objective_value;
+}
+
+// Read problem in 'infile', then generate solution(s) and
+// write the solution to 'outfile'
+void Problem::GenerateSolution(char *infile, char *outfile, bool print, ALGORITHM algorithm)
+{
+	instance = new Instance(infile);
+
+	// Take time
+	chrono::steady_clock::time_point start = chrono::steady_clock::now();
+
+	size_t objective_value = Solve(algorithm);
 
 	// Take time
 	chrono::steady_clock::time_point end = chrono::steady_clock::now();

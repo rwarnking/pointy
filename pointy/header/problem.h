@@ -16,7 +16,10 @@ class Problem
 public:
 
 	Problem();
+	Problem(char *instance_file);
 	~Problem();
+
+	size_t Solve(ALGORITHM algorithm);
 
 	void CheckSolution(char *infile);
 	void GenerateSolution(char *infile, char *outfile, bool print = false, ALGORITHM algorithm = IDIOT);

@@ -19,6 +19,8 @@ namespace logger
     {
     public:
 
+        static const LEVEL loglevel = INFO;
+
         static LEVEL LogLevel()
         {
             return loglevel;
@@ -80,12 +82,6 @@ namespace logger
                 Println(lvl, args...);
             }
         }
-
-
-    private:
-        
-        static const LEVEL loglevel = INFO;
-
     };
 }
 

@@ -49,17 +49,19 @@ private:
 
     void GenerateInitialSolution(std::vector<Box> &solution);
 
+    bool IsTabu(size_t index);
+
+    bool IsTabu(size_t index, CORNER corner);
+
     void UpdateTabuList(size_t index, short corner);
 
     CORNER GetBestOrientation(int x, int y);
 
-    CORNER NextCorner(CORNER before, short pos);
+    CORNER NextCorner(CORNER before, size_t index);
 
     bool UseSolution(size_t iter, size_t current_value, size_t next_value);
 
     size_t ChooseNeighbour(std::vector<Box> &solution, std::vector<Box> &next, size_t current_value);
-
-    bool IsTabu(size_t index);
 
     void DeleteOneBox(std::vector<Box> &solution);
 
@@ -77,7 +79,7 @@ private:
     size_t objective_value;
 
     // Help stuff
-    short *tabu;
+    bool **tabu;
 
     // TODO other parameters
     bool start_random;

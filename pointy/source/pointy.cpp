@@ -7,12 +7,22 @@ using namespace logger;
 // Gebrauchshilfe
 void PrintHelp(void)
 {
-	Logger::Println(LEVEL::INFO, "This is the help function.");
-	Logger::Println(LEVEL::INFO, "This program enables you to evaluate or generate a solution for the Labeling Problem.");
-	Logger::Println(LEVEL::INFO, "The evaluation process can be started by writing: 'pointy -eval filename.txt' ");
-	Logger::Println(LEVEL::INFO, "The generation process can be started by writing: 'pointy -in inputfilename.txt -out outputfilename.txt' ");
-	Logger::Println(LEVEL::INFO, "The generation process can be started and exported to a bmp by writing: 'pointy -in inputfilename.txt -out outputfilename.txt -p' ");
-	Logger::Println(LEVEL::INFO, "The related files will be generated in the data-folder. Therefore the inputfiles should be located in the same folder.");
+	// Logger::Println(LEVEL::INFO, "This is the help function.");
+	// Logger::Println(LEVEL::INFO, "This program enables you to evaluate or generate a solution for the Labeling Problem.");
+	// Logger::Println(LEVEL::INFO, "The evaluation process can be started by writing: 'pointy -eval filename.txt' ");
+	// Logger::Println(LEVEL::INFO, "The generation process can be started by writing: 'pointy -in inputfilename.txt -out outputfilename.txt' ");
+	// Logger::Println(LEVEL::INFO, "The generation process can be started and exported to a bmp by writing: 'pointy -in inputfilename.txt -out outputfilename.txt -p' ");
+	// Logger::Println(LEVEL::INFO, "The related files will be generated in the data-folder. Therefore the inputfiles should be located in the same folder.");
+
+	Logger::Println(LEVEL::INFO, "Description: This program can solve a 4-point-labelling problem or evaluate a given solution for such a problem\n");
+	Logger::Println(LEVEL::INFO, "Evaluate   : pointy -eval <filename>");
+	Logger::Println(LEVEL::INFO, "Solve      : pointy -in <infile> -out <outfile> [-p] [-g|-s|-i]");
+	Logger::Println(LEVEL::INFO, "------------------------------------------------------------------------");
+	Logger::Println(LEVEL::INFO, "Flags:");
+	Logger::Println(LEVEL::INFO, "   -p      | generate a .bmp image for the computed solution");
+	Logger::Println(LEVEL::INFO, "   -i      | use idiot heuristic (default)");
+	Logger::Println(LEVEL::INFO, "   -g      | use graphic heuristic");
+	Logger::Println(LEVEL::INFO, "   -s      | use simulated annealing");
 }
 
 void ParseFlags(char **argv, int argc, bool &print, ALGORITHM &algorithm)

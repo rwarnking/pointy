@@ -43,7 +43,11 @@ SimulatedAnnealing::~SimulatedAnnealing()
 {
     // Free allocated memory
     if (tabu) {
-        delete tabu;
+        for (size_t i = 0; i < instance->GetPointCount(); i++)
+        {
+            delete[] tabu[i];
+        }
+        delete[] tabu;
         tabu = nullptr;
     }
 }
@@ -108,11 +112,13 @@ size_t SimulatedAnnealing::Solve(Instance *problem_instance)
     work.reserve(points.size());
 
     // Initialize and fill tabu list
-    tabu = new short[points.size()];
-    fill_n(tabu, points.size(), 0);
-
+    tabu = new bool*[points.size()];
     for (size_t i = 0; i < points.size(); i++)
     {
+        tabu[i] = new bool[(short)NONE-1];
+        // Initialize with false
+        fill_n(tabu[i], (short)NONE-1, 0);
+
         work.push_back(points[i].box);
     }
 
@@ -140,6 +146,8 @@ size_t SimulatedAnnealing::Solve(Instance *problem_instance)
             // Update optimal solution if new one is better
             if (current_value > objective_value)
             {
+                Logger::Println(LEVEL::DEBUG, "update with ", current_value, " at iteration ", iter);
+
                 if (((double) current_value / objective_value) - 1.0 < threshold)
                     threshold_count++;
                 else
@@ -147,6 +155,10 @@ size_t SimulatedAnnealing::Solve(Instance *problem_instance)
 
                 opt = work;
                 objective_value = current_value;
+            }
+            else
+            {
+                threshold_count++;
             }
         }
     }
@@ -210,16 +222,37 @@ void SimulatedAnnealing::GenerateInitialSolution(std::vector<Box> &solution)
     opt = solution;
 }
 
+bool SimulatedAnnealing::IsTabu(size_t index, CORNER corner)
+{
+
+    return corner == NONE ? false : use_tabu && tabu[index][(short)corner];
+}
+
+bool SimulatedAnnealing::IsTabu(size_t index)
+{
+    bool ok = true;
+    for (short i = 0; i < (short)NONE-1; i++)
+    {
+        ok = ok && tabu[index][i];
+    }
+
+    return use_tabu && ok;
+}
+
 void SimulatedAnnealing::UpdateTabuList(size_t index, short corner)
 {
+    if (corner == NONE) return;
+
     if (tabu_count == max_tabu)
     {
         tabu_count = 1;
-        fill_n(tabu, instance->GetPointCount(), 0);
+        for (size_t i = 0; i < instance->GetPointCount(); i++)
+        {
+            fill_n(tabu[i], (short)NONE-1, 0);
+        }
     }
 
-    if (tabu[index] != ALL_USED)
-        tabu[index] = (tabu[index] << 1) + 1;
+    tabu[index][(short)corner] = true;
 }
 
 CORNER SimulatedAnnealing::GetBestOrientation(int x, int y)
@@ -259,7 +292,7 @@ size_t SimulatedAnnealing::ChooseNeighbour(std::vector<Box> &solution, std::vect
         do
         {
             tmp_corner = (CORNER) (rand() % (NONE+1));
-        } while (tmp_corner == before && !IsTabu(index));
+        } while (tmp_corner == before && IsTabu(index, tmp_corner));
 
         solution[index].SetCorner(points[index].x, points[index].y, tmp_corner);
         
@@ -287,7 +320,7 @@ size_t SimulatedAnnealing::ChooseNeighbour(std::vector<Box> &solution, std::vect
             
             // Set label corner to sth different than before
             before = solution[index].corner;
-            tmp_corner = NextCorner(before, tabu[index]);
+            tmp_corner = NextCorner(before, index);
             
             next[index].SetCorner(points[index].x, points[index].y, tmp_corner);
             
@@ -311,11 +344,6 @@ size_t SimulatedAnnealing::ChooseNeighbour(std::vector<Box> &solution, std::vect
     return solution_value;
 }
 
-bool SimulatedAnnealing::IsTabu(size_t index)
-{
-    return use_tabu && tabu[index] == ALL_USED;
-}
-
 void SimulatedAnnealing::DeleteOneBox(std::vector<Box> &solution)
 {
     vector<Point> &points = *instance->GetPoints();
@@ -327,23 +355,13 @@ void SimulatedAnnealing::DeleteOneBox(std::vector<Box> &solution)
     } while (solution[index].corner == NONE);
 
     solution[index].SetCorner(points[index].x, points[index].y, NONE);
-    tabu[index] = 0;
 }
 
-CORNER SimulatedAnnealing::NextCorner(CORNER before, short pos)
+CORNER SimulatedAnnealing::NextCorner(CORNER before, size_t index)
 {
-    short mask = 8;
-    bool tmp[4] = { false, false, false, false };
-    for (short i = 0; i < 4; i++)
+    for (short i = 0; i < (short)NONE-1; i++)
     {
-        tmp[i] = (pos & mask) == mask;
-        pos = pos >> 1;
-        mask = mask >> 1;
-    }
-
-    for (short i = 0; i < 4; i++)
-    {
-        if (tmp[i] == false)
+        if (!tabu[index][i])
             return (CORNER) i;
     }
 
