@@ -39,11 +39,11 @@ void Box::SetCorner(int px, int py, CORNER new_corner)
 	corner = new_corner;
 	switch (corner)
 	{
-		case BOT_LEFT: x = px; y = py + height; break;
-		case TOP_LEFT: x = px; y = py; break;
-		case TOP_RIGHT: x = px - length; y = py; break;
-		case BOT_RIGHT: x = px - length; y = py + height; break;
-		default: x = y = 0; break;
+		case BOT_LEFT: x = px-length; y = py; break;
+		case TOP_LEFT: x = px-length; y = py+height; break;
+		case TOP_RIGHT: x = px; y = py+height; break;
+		case BOT_RIGHT: x = px; y = py; break;
+		default: x = y = INT_MIN; break;
 	}
 }
 
@@ -58,8 +58,9 @@ std::string Box::ToString()
 
 bool Box::Intersects(Box &other)
 {
-	return x < other.x + other.length && x + length > other.x &&
-		   y > other.y - other.height && y - height < other.y;
+	return corner == NONE || other.corner == NONE ||
+		   (x < other.x-length && x-length > other.x && 
+           y < other.y-height && y-height > other.y);
 }
 
 Point::Point() :
@@ -197,6 +198,25 @@ int Instance::GetMiddleX()
 int Instance::GetMiddleY()
 {
 	return min_y + (max_y - min_y) / 2;
+}
+
+bool Instance::CheckSolution()
+{
+	for (size_t i = 0; i < points.size(); i++)
+	{
+		for (size_t j = i+1; j < points.size(); j++)
+		{
+			if (points[i].box.Intersects(points[j].box))
+			{
+				Logger::Println(LEVEL::DEBUG, "Overlap:");
+				Logger::Println(LEVEL::DEBUG, points[i].ToString());
+				Logger::Println(LEVEL::DEBUG, points[j].ToString());
+
+				return false;
+			}
+		}
+	}
+	return true;
 }
 
 void Instance::SetPointCount(int count)

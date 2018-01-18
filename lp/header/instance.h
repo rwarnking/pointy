@@ -72,6 +72,8 @@ public:
 	int GetMiddleX();
 	int GetMiddleY();
 
+	bool CheckSolution();
+
 	void SetPointCount(int count);
 	void SetPoints(std::vector<Point> *p);
 

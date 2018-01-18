@@ -19,7 +19,7 @@ namespace logger
     {
     public:
 
-        static const LEVEL loglevel = INFO;
+        static const LEVEL loglevel = DEBUG;
 
         static LEVEL LogLevel()
         {

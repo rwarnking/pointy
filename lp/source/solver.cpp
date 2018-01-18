@@ -124,21 +124,28 @@ SCIP_RETCODE Solver::CopySolutionFree(SCIP_VAR **vars, bool print, bool write)
         SCIP_CALL(SCIPprintSol(scip, solution, NULL, FALSE));
     }
 
-    for (size_t i = 0; i < graph->NodeCount()*MAX_SUB; i++)
+    for (int i = 0; i < (int)graph->NodeCount(); i++)
     {
-        if (SCIPgetSolVal(scip, solution, vars[i]) > 0.5)
+        bool found = false;
+        for (short j = 0; j < MAX_SUB; j++)
         {
-            graph->instance.SetBox(i/MAX_SUB, GetCorner(i%MAX_SUB));
-            objValue++;
+            int index = i*MAX_SUB+j;
+            if (!found && SCIPgetSolVal(scip, solution, vars[index]) > 0.5)
+            {
+                graph->instance.SetBox(i, GetCorner(j));
+                objValue++;
+                found = true;
+            }
+            SCIP_CALL(SCIPreleaseVar(scip, &vars[index]));
         }
-
-        SCIP_CALL(SCIPreleaseVar(scip, &vars[i]));
     }
     SCIP_CALL(SCIPfree(&scip));
 }
 
 int Solver::Solve(const char *filename, double *time, bool take_time, bool print, bool write)
 {
+    objValue = 0;
+
     HandleError(InitProblem(print), "Could not create problem");
 
     if (!print)
@@ -160,13 +167,18 @@ int Solver::Solve(const char *filename, double *time, bool take_time, bool print
     // Set solution values in instance
     HandleError(CopySolutionFree(vars, print, write), "Could not free SCIP data structures");
 
-    if (write)
+    bool correct = graph->instance.CheckSolution();
+
+    if (!correct)
+        Logger::Println(LEVEL::INFO, "Incorrect result: ", objValue, " of ", graph->NodeCount());
+
+    if (correct && write)
         graph->instance.WriteFile(filename);
 
     if (vars)
         delete vars;
 
-    return objValue;
+    return correct ?  objValue : 0;
 }
 
 CORNER Solver::GetCorner(int c)

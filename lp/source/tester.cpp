@@ -74,9 +74,10 @@ void TestDir(const char *indir, const char *outfile, int iterations)
         if (file_name[0] == '.' || (file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
             continue;
 
-        logger::Logger::Println(logger::LEVEL::INFO, "Testing file < ", file_name, " > ...");
-
+        logger::Logger::Print(logger::LEVEL::INFO, "Testing file < ", file_name, " > ...");
         TestFile(full_file_name.c_str(), outfile);;
+        logger::Logger::Println(logger::LEVEL::INFO, " OKAY");
+
     } while (FindNextFile(dir, &file_data));
 
     FindClose(dir);

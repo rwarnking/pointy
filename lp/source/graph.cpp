@@ -53,17 +53,14 @@ void Graph::ConstructGraph()
         for (short a = 0; a < (short)NONE; a++)
         {
             points[i].box.SetCorner(points[i].x, points[i].y, (CORNER)a);
-
             for (size_t j = i+1; j < nodes; j++)
             {
-                Edge edge;
                 for (short b = 0; b < (short)NONE; b++)
                 {
                     points[j].box.SetCorner(points[j].x, points[j].y, (CORNER)b);
                     if (points[i].box.Intersects(points[j].box))
                     {
-                        edge = Edge(i, j, (CORNER)a, (CORNER)b);
-                        edges.insert(edge);
+                        edges.insert(Edge(i, j, (CORNER)a, (CORNER)b));
                     }
                 }
             }
