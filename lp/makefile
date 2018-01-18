@@ -2,7 +2,7 @@
 # Makefile
 #-------------------------------------------------------------------------
 
-GEN=generator
+PROJECT=lp_solver
 HEADER=header/*.h
 SOURCE=source/*.cpp
 
@@ -12,23 +12,28 @@ EXE=exe
 
 #-------------------------------------------------------------------------
 # Compiler-Flags
+#
 #-------------------------------------------------------------------------
 
-CFLAGS=-o
+CFLAGS=-std=c++17 -o
+LINK=-L C:/SCIP/lib -lscip
 
 #-------------------------------------------------------------------------
 # Main-Targets
 #-------------------------------------------------------------------------
 
-$(GEN): $(GEN).$(EXE)
-	@echo Successfully compiled $(GEN)
+$(PROJECT): clean $(PROJECT).$(EXE)
+	@echo Successfully compiled $(PROJECT)
+
+debug: clean
+	@$(CC) -g $(CFLAGS) $(PROJECT) $(HEADER) $(SOURCE) $(LINK)
 
 clean:
-	$(RM) $(GEN).$(EXE)
+	@IF EXIST $(PROJECT).$(EXE) $(RM) $(PROJECT).$(EXE)
 
 #-------------------------------------------------------------------------
 # Sub-Targets
 #-------------------------------------------------------------------------
 
-$(GEN).$(EXE):
-	$(CC) $(CFLAGS) $(GEN) $(HEADER) $(SOURCE)
+$(PROJECT).$(EXE):
+	@$(CC) $(CFLAGS) $(PROJECT) $(HEADER) $(SOURCE) $(LINK)

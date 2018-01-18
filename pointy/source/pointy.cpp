@@ -43,8 +43,6 @@ void ParseFlags(char **argv, int argc, bool &print, ALGORITHM &algorithm)
 
 int main(int argc, char **argv)
 {
-	//Logger::SetLogLevel(INFO);
-
 	Problem prob = Problem();
 
 	if (argc == 3)
