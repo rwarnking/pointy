@@ -39,10 +39,10 @@ void Box::SetCorner(int px, int py, CORNER new_corner)
 	corner = new_corner;
 	switch (corner)
 	{
-		case BOT_LEFT: x = px-length; y = py; break;
-		case TOP_LEFT: x = px-length; y = py+height; break;
-		case TOP_RIGHT: x = px; y = py+height; break;
-		case BOT_RIGHT: x = px; y = py; break;
+		case BOT_LEFT: x = px; y = py + height; break;
+		case TOP_LEFT: x = px; y = py; break;
+		case TOP_RIGHT: x = px - length; y = py; break;
+		case BOT_RIGHT: x = px - length; y = py + height; break;
 		default: x = y = INT_MIN; break;
 	}
 }
@@ -58,9 +58,11 @@ std::string Box::ToString()
 
 bool Box::Intersects(Box &other)
 {
-	return corner == NONE || other.corner == NONE ||
-		   (x < other.x-length && x-length > other.x && 
-           y < other.y-height && y-height > other.y);
+	if (corner == NONE || other.corner == NONE)
+		return false;
+	else
+        return x < other.x + other.length && x + length > other.x &&
+		       y > other.y - other.height && y - height < other.y;
 }
 
 Point::Point() :
@@ -124,7 +126,6 @@ Instance::Instance(vector<Point> *p)
 {
 	points = *p;
 	point_count = (int)points.size();
-	// TODO search min/max
 	min_x = min_y = INT_MAX;
 	max_x = max_y = INT_MIN;
 	min_l = min_h  = INT_MAX;
@@ -137,6 +138,7 @@ Instance::Instance(const char* filename, bool read_solution)
 	max_x = max_y = INT_MIN;
 	min_l = min_h  = INT_MAX;
 	max_l = max_h = INT_MIN;
+	point_count = 0;
 	ReadFile(filename, read_solution);
 }
 
@@ -311,12 +313,10 @@ void Instance::ReadPoints(string content, bool read_solution)
 			catch (invalid_argument)
 			{
 				Logger::Println(LEVEL::ERR, "Point ", i, " has invalid data");
-				// TODO exit programm (logger)
 			}
 			catch (out_of_range)
 			{
 				Logger::Println(LEVEL::ERR, "Point ", i, " has data that is out of range");
-				// TODO exit programm (logger)
 			}
 		}
 
@@ -363,12 +363,10 @@ void Instance::ReadPoints(string content, bool read_solution)
 				catch (invalid_argument)
 				{
 					Logger::Println(LEVEL::ERR, "Point ", i, " has invalid data");
-					// TODO exit programm (logger)
 				}
 				catch (out_of_range)
 				{
 					Logger::Println(LEVEL::ERR, "Point ", i, " has data that is out of range");
-					// TODO exit programm (logger)
 				}
 			}
 

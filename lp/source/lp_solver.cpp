@@ -8,7 +8,8 @@ int main(int argc, char **argv)
     if (argc == 2 || argc == 3)
     {
         Solver s = Solver(argv[1]);
-        s.Solve(argc == 3 ? argv[2] : "out.txt", nullptr, false, true, true);
+        //s.Solve(argc == 3 ? argv[2] : "out.txt", nullptr, false, true, true);
+        s.Solve(argc == 3 ? argv[2] : "out.txt", nullptr, false, false, false);
     }
     else if (argc >= 4)
     {

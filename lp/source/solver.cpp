@@ -75,7 +75,7 @@ SCIP_RETCODE Solver::InitVariables(SCIP_VAR **vars, bool print)
 SCIP_RETCODE Solver::InitConstraints(SCIP_VAR **vars, bool print)
 {
     char name[SCIP_MAXSTRLEN];
-    // Sum of all labels for one node must be less than 1
+    // Sum of all labels for one node must be less than or equal to 1
     for (int i = 0; i < (int)graph->NodeCount(); i++)
     {
         SCIP_CONS *con;
@@ -93,7 +93,7 @@ SCIP_RETCODE Solver::InitConstraints(SCIP_VAR **vars, bool print)
     }
 
     int count = 0;
-    // The sum of two labels for which there exists an edge in the graph must be less than 1
+    // The sum of two labels for which there exists an edge in the graph must be less than or equal to 1
     for (auto it : graph->edges)
     {
         SCIP_CONS *con;
@@ -126,15 +126,13 @@ SCIP_RETCODE Solver::CopySolutionFree(SCIP_VAR **vars, bool print, bool write)
 
     for (int i = 0; i < (int)graph->NodeCount(); i++)
     {
-        bool found = false;
         for (short j = 0; j < MAX_SUB; j++)
         {
             int index = i*MAX_SUB+j;
-            if (!found && SCIPgetSolVal(scip, solution, vars[index]) > 0.5)
+            if (SCIPgetSolVal(scip, solution, vars[index]) > 0.9)
             {
                 graph->instance.SetBox(i, GetCorner(j));
                 objValue++;
-                found = true;
             }
             SCIP_CALL(SCIPreleaseVar(scip, &vars[index]));
         }
@@ -170,7 +168,7 @@ int Solver::Solve(const char *filename, double *time, bool take_time, bool print
     bool correct = graph->instance.CheckSolution();
 
     if (!correct)
-        Logger::Println(LEVEL::INFO, "Incorrect result: ", objValue, " of ", graph->NodeCount());
+        Logger::Println(LEVEL::DEBUG, "Incorrect result: ", objValue, " of ", graph->NodeCount());
 
     if (correct && write)
         graph->instance.WriteFile(filename);
@@ -178,7 +176,7 @@ int Solver::Solve(const char *filename, double *time, bool take_time, bool print
     if (vars)
         delete vars;
 
-    return correct ?  objValue : 0;
+    return correct ?  objValue : -1;
 }
 
 CORNER Solver::GetCorner(int c)
@@ -190,18 +188,6 @@ CORNER Solver::GetCorner(int c)
         case TOP_RIGHT: return TOP_RIGHT;
         case BOT_RIGHT: return BOT_RIGHT;
         default: return NONE;
-    }
-}
-
-inline const char* Solver::CornerName(short corner)
-{
-    switch (corner)
-    {
-        case TOP_LEFT: return "top_left";
-        case BOT_LEFT: return "bot_left";
-        case TOP_RIGHT: return "top_right";
-        case BOT_RIGHT: return "bot_right";
-        default: return "none";
     }
 }
 

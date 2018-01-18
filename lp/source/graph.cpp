@@ -60,7 +60,7 @@ void Graph::ConstructGraph()
                     points[j].box.SetCorner(points[j].x, points[j].y, (CORNER)b);
                     if (points[i].box.Intersects(points[j].box))
                     {
-                        edges.insert(Edge(i, j, (CORNER)a, (CORNER)b));
+                        edges.insert(Edge(i, j, points[i].box.corner, points[j].box.corner));
                     }
                 }
             }

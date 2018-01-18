@@ -30,7 +30,6 @@ private:
     SCIP_RETCODE CopySolutionFree(SCIP_VAR **vars, bool print, bool write);
 
     CORNER GetCorner(int c);
-    inline const char* CornerName(short corner);
 
     Graph *graph;
     SCIP *scip;

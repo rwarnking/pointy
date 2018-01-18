@@ -44,10 +44,27 @@ struct EdgeHash
     std::size_t operator()(const Edge &e) const
     {
         std::size_t seed = 0;
-        hash_combine(seed, std::hash<int>{}(e.one));
-        hash_combine(seed, std::hash<int>{}(e.two));
-        hash_combine(seed, std::hash<short>{}(e.corner_one));
-        hash_combine(seed, std::hash<short>{}(e.corner_two));
+        if (e.one <= e.two)
+        {
+            hash_combine(seed, std::hash<int>{}(e.one));
+            hash_combine(seed, std::hash<int>{}(e.two));
+        }
+        else
+        {
+            hash_combine(seed, std::hash<int>{}(e.two));
+            hash_combine(seed, std::hash<int>{}(e.one));
+        }
+
+        if (e.corner_one <= e.corner_two)
+        {
+            hash_combine(seed, std::hash<short>{}(e.corner_one));
+            hash_combine(seed, std::hash<short>{}(e.corner_two));
+        }
+        else
+        {
+            hash_combine(seed, std::hash<short>{}(e.corner_two));
+            hash_combine(seed, std::hash<short>{}(e.corner_one));
+        }
         return seed;
     }
 };
