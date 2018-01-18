@@ -4,3 +4,9 @@
 0 0 4 4 C 0 0 0
 1 1 3 3 D 0 0 0
 2 2 2 2 E 0 0 0
+
+..\data\hand_made/diagonal_unequal_boxes_5.txt
+0 0x1e1670
+
+..\data\hand_made/diagonal_unequal_boxes_5.txt
+0 0x2e21670

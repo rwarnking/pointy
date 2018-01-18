@@ -5,17 +5,17 @@ using namespace std;
 
 Graph::Graph()
 {
-    instance = nullptr;
+    instance = Instance();
     edges = unordered_set<Edge, EdgeHash, EdgeEqual>();
 }
 
 Graph::Graph(const char *filename)
 {
-    instance = new Instance(filename, false);
+    instance = Instance(filename, false);
     ConstructGraph();
 }
 
-Graph::Graph(Instance *inst)
+Graph::Graph(Instance inst)
 {
     instance = inst;
     ConstructGraph();
@@ -23,7 +23,7 @@ Graph::Graph(Instance *inst)
 
 std::vector<Point>* Graph::Nodes()
 {
-    return &instance->points;
+    return &instance.points;
 }
 
 bool Graph::HasEdge(int from, int to, CORNER from_corner, CORNER to_corner)
@@ -38,16 +38,13 @@ size_t Graph::EdgeCount()
 
 size_t Graph::NodeCount()
 {
-    return instance->point_count;
+    return instance.point_count;
 }
 
 void Graph::ConstructGraph()
 {
-    if (instance == nullptr)
-        logger::Logger::Println(logger::LEVEL::ERR, "ERROR in \"ConstructGraph()\": instance is nullptr");
-
-    size_t nodes = instance->point_count;
-    vector<Point> &points = instance->points;
+    size_t nodes = instance.point_count;
+    vector<Point> &points = instance.points;
     
     edges = unordered_set<Edge, EdgeHash, EdgeEqual>();
 

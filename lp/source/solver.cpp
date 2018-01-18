@@ -40,7 +40,7 @@ void Solver::HandleError(SCIP_RETCODE error_code, const char *message)
         Logger::Println(LEVEL::ERR, message);
 }
 
-SCIP_RETCODE Solver::InitProblem()
+SCIP_RETCODE Solver::InitProblem(bool print)
 {
     SCIP_CALL(SCIPcreate(&scip));
     SCIP_CALL(SCIPincludeDefaultPlugins(scip));
@@ -49,12 +49,13 @@ SCIP_RETCODE Solver::InitProblem()
     SCIP_CALL(SCIPcreateProbBasic(scip, "4-point node labelling"));
     SCIP_CALL(SCIPsetObjsense(scip, SCIP_OBJSENSE_MAXIMIZE));
 
-    Logger::Println(LEVEL::INFO, "Created Problem ...");
+    if (print)
+        Logger::Println(LEVEL::INFO, "Created Problem ...");
 
     return SCIP_OKAY;
 }
 
-SCIP_RETCODE Solver::InitVariables(SCIP_VAR **vars)
+SCIP_RETCODE Solver::InitVariables(SCIP_VAR **vars, bool print)
 {
     char name[SCIP_MAXSTRLEN];
     for (int i = 0; i < (int)graph->NodeCount()*MAX_SUB; i++)
@@ -65,12 +66,13 @@ SCIP_RETCODE Solver::InitVariables(SCIP_VAR **vars)
         SCIP_CALL(SCIPaddVar(scip, vars[i]));
     }
 
-    Logger::Println(LEVEL::INFO, "Added ", graph->NodeCount()*4, " Variables ...");
+    if (print)
+        Logger::Println(LEVEL::INFO, "Added ", graph->NodeCount()*4, " Variables ...");
 
     return SCIP_OKAY;
 }
 
-SCIP_RETCODE Solver::InitConstraints(SCIP_VAR **vars)
+SCIP_RETCODE Solver::InitConstraints(SCIP_VAR **vars, bool print)
 {
     char name[SCIP_MAXSTRLEN];
     // Sum of all labels for one node must be less than 1
@@ -106,7 +108,8 @@ SCIP_RETCODE Solver::InitConstraints(SCIP_VAR **vars)
         SCIP_CALL(SCIPreleaseCons(scip, &con));
     }
 
-    Logger::Println(LEVEL::INFO, "Added ", graph->NodeCount()+graph->EdgeCount(), " Constraints ...");
+    if (print)
+        Logger::Println(LEVEL::INFO, "Added ", graph->NodeCount()+graph->EdgeCount(), " Constraints ...");
 
     return SCIP_OKAY;
 }
@@ -114,25 +117,21 @@ SCIP_RETCODE Solver::InitConstraints(SCIP_VAR **vars)
 SCIP_RETCODE Solver::CopySolutionFree(SCIP_VAR **vars, bool print, bool write)
 {
     SCIP_SOL *solution = SCIPgetBestSol(scip);
-    if(solution != NULL)
+        
+    if(solution != NULL && print)
     {
         Logger::Println(LEVEL::INFO, "Solution:");
-        if (print)
-            SCIP_CALL(SCIPprintSol(scip, solution, NULL, FALSE));
+        SCIP_CALL(SCIPprintSol(scip, solution, NULL, FALSE));
     }
 
-    std::vector<Point> &points = *graph->instance->GetPoints();
     for (size_t i = 0; i < graph->NodeCount()*MAX_SUB; i++)
     {
-        if (write && SCIPgetSolVal(scip, solution, vars[i]) > 0.5)
+        if (SCIPgetSolVal(scip, solution, vars[i]) > 0.5)
         {
-            points[i/MAX_SUB].box.SetCorner(points[i].x, points[i].y, GetCorner(i%MAX_SUB));
+            graph->instance.SetBox(i/MAX_SUB, GetCorner(i%MAX_SUB));
             objValue++;
         }
-        else
-        {
-            points[i/MAX_SUB].box.SetCorner(points[i].x, points[i].y, NONE);
-        }
+
         SCIP_CALL(SCIPreleaseVar(scip, &vars[i]));
     }
     SCIP_CALL(SCIPfree(&scip));
@@ -140,14 +139,17 @@ SCIP_RETCODE Solver::CopySolutionFree(SCIP_VAR **vars, bool print, bool write)
 
 int Solver::Solve(const char *filename, double *time, bool take_time, bool print, bool write)
 {
-    HandleError(InitProblem(), "Could not create problem");
+    HandleError(InitProblem(print), "Could not create problem");
+
+    if (!print)
+        HandleError(SCIPsetMessagehdlr(scip, NULL), "Could not disable SCIP output");
 
     // Add Variables
     SCIP_VAR **vars = new SCIP_VAR*[graph->NodeCount()*MAX_SUB];
-    HandleError(InitVariables(vars), "Could not create variables");
+    HandleError(InitVariables(vars, print), "Could not create variables");
 
     // Add Constraints
-    HandleError(InitConstraints(vars), "Could not create constraints");
+    HandleError(InitConstraints(vars, print), "Could not create constraints");
 
     // Use SCIP to solve the ILP
     HandleError(SCIPsolve(scip), "Could not solve problem");
@@ -159,7 +161,7 @@ int Solver::Solve(const char *filename, double *time, bool take_time, bool print
     HandleError(CopySolutionFree(vars, print, write), "Could not free SCIP data structures");
 
     if (write)
-        graph->instance->WriteFile(filename);
+        graph->instance.WriteFile(filename);
 
     if (vars)
         delete vars;

@@ -75,6 +75,8 @@ public:
 	void SetPointCount(int count);
 	void SetPoints(std::vector<Point> *p);
 
+	void SetBox(int index, CORNER corner);
+
 	void WriteFile(const char *filename);
 
 	size_t point_count;

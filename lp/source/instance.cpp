@@ -104,7 +104,7 @@ std::string Point::ToString()
 {
 	std::string s = std::to_string(x);
 	s += " " + std::to_string(y) + " " + std::to_string(box.length) + " " + std::to_string(box.height) + " " + box.label + " " +
-		 std::to_string(HasBox()) + " " + std::to_string(box.x) + " " + std::to_string(box.y) + "\n";
+		 std::to_string(HasBox()) + " " + std::to_string(box.x) + " " + std::to_string(box.y);
 
 	return s;
 }
@@ -207,6 +207,14 @@ void Instance::SetPointCount(int count)
 void Instance::SetPoints(std::vector<Point> *p)
 {
 	points = *p;
+}
+
+void Instance::SetBox(int index, CORNER corner)
+{
+	if (index < 0 || index >= (int)points.size())
+		return;
+
+	points[index].box.SetCorner(points[index].x, points[index].y, corner);
 }
 
 void Instance::ReadFile(const char *filename, bool read_solution)
@@ -390,9 +398,9 @@ void Instance::WriteFile(const char *filename)
 		if (file_writer)
 		{
 			file_writer << point_count << endl;
-			for (auto it = points.begin(); it != points.end(); it++)
+			for (auto point : points)
 			{
-				file_writer << it->ToString();
+				file_writer << point.ToString() << endl;
 			}
 			file_writer.close();
 		}

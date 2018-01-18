@@ -12,3 +12,8 @@
 -3 3 2 3 K 0 0 0
 3 -3 2 3 L 0 0 0
 -3 -3 2 3 M 0 0 0
+..\data\hand_made/big_cross_13.txt
+0 0x1e1670
+
+..\data\hand_made/big_cross_13.txt
+0 0x2e21670

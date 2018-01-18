@@ -66,7 +66,7 @@ public:
 
     Graph();
     Graph(const char *filename);
-    Graph(Instance *inst);
+    Graph(Instance inst);
 
     std::vector<Point>* Nodes();
 
@@ -79,7 +79,7 @@ public:
 
     // Contains all edges as tuples of indices
     std::unordered_set<Edge, EdgeHash, EdgeEqual> edges;
-    Instance *instance;
+    Instance instance;
 };
 
 #endif /* _GRAPH_H_ */

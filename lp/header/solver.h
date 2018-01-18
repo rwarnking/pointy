@@ -24,9 +24,9 @@ private:
 
     void HandleError(SCIP_RETCODE error_code, const char *message);
 
-    SCIP_RETCODE InitProblem();
-    SCIP_RETCODE InitVariables(SCIP_VAR **vars);
-    SCIP_RETCODE InitConstraints(SCIP_VAR **vars);
+    SCIP_RETCODE InitProblem(bool print);
+    SCIP_RETCODE InitVariables(SCIP_VAR **vars, bool print);
+    SCIP_RETCODE InitConstraints(SCIP_VAR **vars, bool print);
     SCIP_RETCODE CopySolutionFree(SCIP_VAR **vars, bool print, bool write);
 
     CORNER GetCorner(int c);

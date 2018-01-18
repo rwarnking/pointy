@@ -4,3 +4,5 @@
 1 1 5 5 hallo3 0 0 0
 1 1 5 5 hallo4 0 0 0
 -1 -1 5 5 hallo5 0 0 0
+..\data\hand_made/four_equal_5.txt
+0 0x1e1670

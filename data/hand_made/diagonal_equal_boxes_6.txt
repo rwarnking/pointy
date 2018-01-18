@@ -5,3 +5,8 @@
 3 -3 5 5 D 0 0 0
 4 -4 5 5 E 0 0 0
 5 -5 5 5 F 0 0 0
+..\data\hand_made/diagonal_equal_boxes_6.txt
+0 0x1e1670
+
+..\data\hand_made/diagonal_equal_boxes_6.txt
+0 0x2e21670

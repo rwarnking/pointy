@@ -3,6 +3,8 @@
 #include "../header/solver.h"
 
 #include <string>
+#include <vector>
+#include <algorithm>
 #include <fstream>
 
 #ifdef _WIN32
@@ -14,27 +16,36 @@
 
 using namespace std;
 
-void TestFile(const char *infile, const char *outfile)
+void TestFile(const char *infile, const char *outfile, int iterations)
 {
-    double *time;
+    vector<double> times = vector<double>();
+    int obj_value;
     Solver solver = Solver(infile);
-    int obj_value = solver.Solve("", time, true, false, false);
 
+    double mean = 0.0;
     try
     {
-        ofstream of(infile, ios::app);
-        of << "\n" << infile << "\n" << obj_value << " " << time << "\n";
+        ofstream of(outfile, ios::app);
+        for (int i = 0; i < iterations; i++)
+        {
+            times.push_back(0.0);
+            obj_value = solver.Solve("", &times.back(), true, false, false);
+            mean += times.back();
+        }
+        sort(times.begin(), times.end(), [](double a, double b) { return a < b; });
+
+        of << "\n" << obj_value << " " << mean / (double)iterations << " " << times[times.size()/2] << " (" << infile << ")\n";
         of.close();
     }
-    catch (exception)
+    catch (...)
     {
-        logger::Logger::Println(logger::LEVEL::ERR, "ERROR: could not write to file: ", infile);
+        logger::Logger::Println(logger::LEVEL::ERR, "ERROR: could not write to file: ", outfile);
     }
 }
 
-void TestDir(const char *indir, const char *outfile)
+void TestDir(const char *indir, const char *outfile, int iterations)
 {
-    logger::Logger::Println(logger::LEVEL::INFO, "Testing all files in <", indir, "> ...");
+    logger::Logger::Println(logger::LEVEL::INFO, "Testing all files in < ", indir, " > ...");
 
     // Get all files in current dir and every subdir (recursive)
 #ifdef _WIN32
@@ -45,18 +56,25 @@ void TestDir(const char *indir, const char *outfile)
     if ((dir = FindFirstFile((directory + "/*").c_str(), &file_data)) == INVALID_HANDLE_VALUE)
         return; /* No files found */
 
+    try
+    {
+        ofstream of(outfile, ios::app);
+        of << "ITERATIONS = " << iterations << "\n<objective value> " << "<mean time> " << "<median time> " << "(<filename>)\n";
+        of.close();
+    }
+    catch (...)
+    {
+        logger::Logger::Println(logger::LEVEL::ERR, "ERROR: could not write to file: ", outfile);
+    }
+
     do {
         const string file_name = file_data.cFileName;
         const string full_file_name = directory + "/" + file_name;
-        const bool is_directory = (file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
 
-        if (file_name[0] == '.')
+        if (file_name[0] == '.' || (file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
             continue;
 
-        if (is_directory)
-            continue;
-
-        logger::Logger::Println(logger::LEVEL::INFO, "Testing file <", full_file_name, "> ...");
+        logger::Logger::Println(logger::LEVEL::INFO, "Testing file < ", file_name, " > ...");
 
         TestFile(full_file_name.c_str(), outfile);;
     } while (FindNextFile(dir, &file_data));
@@ -83,7 +101,7 @@ void TestDir(const char *indir, const char *outfile)
         if (is_directory)
             continue;
 
-        logger::Logger::Println(logger::LEVEL::INFO, "Testing file <", full_file_name, "> ...");
+        logger::Logger::Println(logger::LEVEL::INFO, "Testing file < ", file_name, " > ...");
 
         TestFile(full_file_name.c_str(), outfile);
     }
