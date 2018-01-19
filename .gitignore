@@ -9,4 +9,15 @@
 *.tar
 
 # Folders #
-**/data/random_rect
+**/data/test
+**/testing
+**/pointy/tests
+
+# Special Cases #
+**/pointy/*.txt
+**/lp/*.txt
+**/generator/*.txt
+
+**/pointy/*.bmp
+**/lp/*.bmp
+**/generator/*.bmp

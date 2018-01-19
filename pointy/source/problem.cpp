@@ -33,7 +33,7 @@ void Problem::CheckSolution(char *infile)
 	// Check solution
 	switch (IsFeasible())
 	{
-		case 0: Logger::Println(LEVEL::INFO, GetBoxCount(GRAPHIC)); break;
+		case 0: Logger::Println(LEVEL::INFO, GetBoxCount(), " out of ", instance->GetPointCount()); break;
 		case 1: Logger::Println(LEVEL::ERR, "ERR: found overlapping labels"); break;
 		default: Logger::Println(LEVEL::ERR, "ERR: unknown problem");
 	}
@@ -531,16 +531,7 @@ int Problem::IsFeasible()
 int Problem::GetBoxCount(ALGORITHM which)
 {
 	int count = 0;
-	vector<Point> work;
-	switch (which)
-	{
-		case SIMULATED_ANNEALING:
-		case GRAPHIC: work = instance->points; break;
-		case IDIOT: work = opt; break;
-		default: return -1;
-	}
-
-	for (auto it = work.begin(); it != work.end(); it++)
+	for (auto it = instance->points.begin(); it != instance->points.end(); it++)
 	{
 		if (it->HasBox())
 			count++;

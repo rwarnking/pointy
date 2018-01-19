@@ -18,7 +18,7 @@ public:
 
     int Test(void);
     // filename, time, take time (false), print stuff (true), write soution to file (false)
-    int Solve(const char *filename, double *time=nullptr, bool take_time=false, bool print=true, bool write=true);
+    int Solve(const char *filename, double *time=nullptr, bool take_time=false, bool print=true, bool write=true, bool draw=false);
 
 private:
 

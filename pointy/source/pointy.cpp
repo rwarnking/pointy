@@ -49,6 +49,7 @@ int main(int argc, char **argv)
 	{
 		if (string(argv[1]).compare("-eval") == 0 )
 		{
+			Logger::Println(LEVEL::INFO, "Checking solution for ", argv[2]);
 			prob.CheckSolution(argv[2]);
 		}
 		else
@@ -60,6 +61,7 @@ int main(int argc, char **argv)
 	{
 		if (string(argv[1]).compare("-in") == 0 && string(argv[3]).compare("-out") == 0)
 		{
+			Logger::Println(LEVEL::INFO, "Generating solution for ", argv[2]);
 			prob.GenerateSolution(argv[2], argv[4]);
 		}
 		else

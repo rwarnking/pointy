@@ -210,10 +210,9 @@ bool Instance::CheckSolution()
 		{
 			if (points[i].box.Intersects(points[j].box))
 			{
-				Logger::Println(LEVEL::DEBUG, "Overlap:");
-				Logger::Println(LEVEL::DEBUG, points[i].ToString());
-				Logger::Println(LEVEL::DEBUG, points[j].ToString());
-
+				// Logger::Println(LEVEL::DEBUG, "\nOverlap:");
+				// Logger::Println(LEVEL::DEBUG, points[i].ToString());
+				// Logger::Println(LEVEL::DEBUG, points[j].ToString(), "\n");
 				return false;
 			}
 		}

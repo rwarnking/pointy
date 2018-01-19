@@ -3,6 +3,7 @@
 #-------------------------------------------------------------------------
 
 PROJECT=lp_solver
+PROJECT_D=lp_solver_d
 HEADER=header/*.h
 SOURCE=source/*.cpp
 
@@ -15,7 +16,9 @@ EXE=exe
 #
 #-------------------------------------------------------------------------
 
-CFLAGS=-O2 -o
+OPT=-O2
+DEBUG=-g
+CFLAGS=-o
 LINK=-L C:/SCIP/lib -lscip
 
 #-------------------------------------------------------------------------
@@ -25,15 +28,23 @@ LINK=-L C:/SCIP/lib -lscip
 $(PROJECT): clean $(PROJECT).$(EXE)
 	@echo Successfully compiled $(PROJECT)
 
-debug: clean
-	@$(CC) -g $(CFLAGS) $(PROJECT) $(HEADER) $(SOURCE) $(LINK)
+debug: clean_debug $(PROJECT_D).$(EXE)
+	@echo Successfully compiled $(PROJECT_D)
+
+clean_all: clean clean_debug
 
 clean:
 	@IF EXIST $(PROJECT).$(EXE) $(RM) $(PROJECT).$(EXE)
+
+clean_debug:
+	@IF EXIST $(PROJECT_D).$(EXE) $(RM) $(PROJECT_D).$(EXE)
 
 #-------------------------------------------------------------------------
 # Sub-Targets
 #-------------------------------------------------------------------------
 
 $(PROJECT).$(EXE):
-	@$(CC) $(CFLAGS) $(PROJECT) $(HEADER) $(SOURCE) $(LINK)
+	@$(CC) $(OPT) $(CFLAGS) $(PROJECT) $(HEADER) $(SOURCE) $(LINK)
+
+$(PROJECT_D).$(EXE):
+	@$(CC) $(DEBUG) $(CFLAGS) $(PROJECT_D) $(HEADER) $(SOURCE) $(LINK)

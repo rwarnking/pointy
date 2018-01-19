@@ -16,13 +16,14 @@
 
 using namespace std;
 
-void TestFile(const char *infile, const char *outfile, int iterations)
+bool TestFile(const char *infile, const char *outfile, int iterations)
 {
     vector<double> times = vector<double>();
     int obj_value;
     Solver solver = Solver(infile);
 
     double mean = 0.0;
+    bool correct = true;
     try
     {
         ofstream of(outfile, ios::app);
@@ -30,6 +31,7 @@ void TestFile(const char *infile, const char *outfile, int iterations)
         {
             times.push_back(0.0);
             obj_value = solver.Solve("", &times.back(), true, false, false);
+            correct = correct && obj_value >= 0;
             mean += times.back();
         }
         sort(times.begin(), times.end(), [](double a, double b) { return a < b; });
@@ -40,7 +42,10 @@ void TestFile(const char *infile, const char *outfile, int iterations)
     catch (...)
     {
         logger::Logger::Println(logger::LEVEL::ERR, "ERROR: could not write to file: ", outfile);
+        return false;
     }
+
+    return correct;
 }
 
 void TestDir(const char *indir, const char *outfile, int iterations)
@@ -75,8 +80,8 @@ void TestDir(const char *indir, const char *outfile, int iterations)
             continue;
 
         logger::Logger::Print(logger::LEVEL::INFO, "Testing file < ", file_name, " > ...");
-        TestFile(full_file_name.c_str(), outfile);;
-        logger::Logger::Println(logger::LEVEL::INFO, " OKAY");
+        bool test = TestFile(full_file_name.c_str(), outfile);;
+        logger::Logger::Println(logger::LEVEL::INFO, (test ? " OKAY" : " INCORRECT"));
 
     } while (FindNextFile(dir, &file_data));
 
