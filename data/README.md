@@ -2,19 +2,21 @@
 
 
 These folders contain all instances used for testing.
-+ **generated** contains 30 generated instances
-+ **hand_made** contains 13 instances created by hand
-+ **real_world** contains 8 instances from the real world
++ **generated** contains generated instances
++ **hand_made** contains instances created by hand
++ **real_world** contains instances from the real world
 
 ### Generated Instances
 
-The file names follow the structure given below:
+The folders *geometry* and *wolff* contain generated instances supplied from other groups.
+
+The file names in the folder *random_generator* follow the structure given below:
 
 ```
-<random distribution>_<min value>_<max value>_<number of points>.txt
+<distribution>_<min value>_<max value>_<number of points>.txt
 ```
 
-1. **Random distribution** can either be uniform or pseudo random.
+1. **Distribution** can either be uniform or pseudo random.
 2. **Min Value** can be any integer.
 3. **Max value** can be any integer bigger than min value.
 4. **Number of Points** can be any positive integer.
@@ -26,6 +28,9 @@ The number at the end of the file indicates the number of points of this instanc
 
 ### Real-World Instances
 
-The file names describe what the containing data is based on. The last number in the file name is the number of points of that instance.
+The folders *wolff_real*, *world* and *world_projected* contain (partially equal) real world instances supplied from other groups.
+
+The file names in folder *wolff_variants* describe what the containing data is based on.
+The last number in the file name is the number of points of that instance.
 If the filename begins with *deutsche_staedte* or *deutschland_bahnhoefe*, the two succeeding numbers are the length and height of all 
 boxes of the instance, since no edge lengths were naturally given.

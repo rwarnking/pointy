@@ -7,17 +7,14 @@
 # Archives #
 *.zip
 *.tar
+*.bmp
 
 # Folders #
 **/data/test
+**/data/generated/wolff
 **/testing
-**/pointy/tests
 
 # Special Cases #
-**/pointy/*.txt
-**/lp/*.txt
-**/generator/*.txt
-
-**/pointy/*.bmp
-**/lp/*.bmp
-**/generator/*.bmp
+**/*.txt
+**/*.txt
+**/*.txt
