@@ -13,6 +13,7 @@
 **/data/test
 **/data/generated/wolff
 **/testing
+**/paper
 
 # Special Cases #
 **/*.txt

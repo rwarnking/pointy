@@ -11,10 +11,11 @@ class Solver
 public:
 
 	Solver();
-	Solver(const char *filename);
+	Solver(const char *filename, bool use_cliques=false);
 	~Solver();
 
 	bool CheckInstance(void);
+	Graph* GetGraph();
 
 	// filename, print stuff, write soution to file, draw solution bitmap, draw count (for filenames)
 	int Solve(const char *filename, bool print = true, bool write = true, bool draw = false, int draw_count=1);
@@ -33,6 +34,7 @@ private:
 	Graph *graph;
 	SCIP *scip;
 	int objValue;
+	bool check_cliques;
 };
 
 #endif /* _SOLVER_H_ */

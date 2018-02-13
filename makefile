@@ -83,7 +83,7 @@ $(LP).$(EXE):
 	@$(CC) $(OPT_FLAG) $(CFLAGS) $(LP) $(LP_INC) $(LP_SRC) $(LINK_SCIP)
 
 $(LP)$(DEBUG).$(EXE):
-	@$(CC) $(DEBUG_FLAG) $(CFLAGS) $(LP)$(DEBUG) $(HEADER) $(SOURCE) $(LINK_SCIP)
+	@$(CC) $(DEBUG_FLAG) $(CFLAGS) $(LP)$(DEBUG) $(LP_INC) $(LP_SRC) $(LINK_SCIP)
 
 # Heuristic solver
 $(HEURISTIC).$(EXE):

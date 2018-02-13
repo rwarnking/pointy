@@ -8,6 +8,7 @@
 #include <fstream>
 #include <chrono>
 #include <iomanip>
+#include <cassert>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -18,17 +19,38 @@
 
 using namespace std;
 
-bool TestFile(const char *infile, const char *outfile, int iterations, bool draw)
+void TestCliques(const char *file)
+{
+    Solver solver = Solver(file, true);
+    Graph *graph = solver.GetGraph();
+    vector<NodeGraph> *cliques = graph->GetCliques();
+
+    logger::Logger::Println(logger::LEVEL::INFO, "Testing ", cliques->size(), " cliques for correctness");
+    for (NodeGraph clq : *cliques)
+    {
+        for (auto it1 = clq.begin(); it1 != clq.end(); it1++)
+        {
+            for (auto it2 = clq.begin(); it2 != clq.end(); it2++)
+            {
+                if (it1 != it2)
+                    assert(graph->HasEdge(*it1, *it2));
+            }
+        }
+    }
+    logger::Logger::Println(logger::LEVEL::INFO, "Done");
+}
+
+bool TestFile(const char *infile, const char *outfile, int iterations, bool draw, bool cliques)
 {
 	int obj_value;
     vector<chrono::duration<double>> times = vector<chrono::duration<double>>();
 
     // Construct instance and graph, measue time it took
     auto cstart = chrono::high_resolution_clock::now();
-	Solver solver = Solver(infile);
+	Solver solver = Solver(infile, cliques);
     auto construct_time = chrono::duration<double>(chrono::high_resolution_clock::now() - cstart);
 
-    bool correct = true;    
+    //bool correct = true;    
 	chrono::duration<double> mean = chrono::high_resolution_clock::now() - chrono::high_resolution_clock::now();
     // Measure solving time for <iterations> iterations
 	for (int i = 1; i <= iterations; i++)
@@ -39,7 +61,7 @@ bool TestFile(const char *infile, const char *outfile, int iterations, bool draw
         times.push_back(exec_time+construct_time);
 
 		// Test whether result is correct (not testing whether it's optimal)
-        correct = correct && solver.CheckInstance();
+        // correct = correct && solver.CheckInstance();
 		mean += times.back();
 	}
     // Sort measured times in order to get the median
@@ -60,10 +82,10 @@ bool TestFile(const char *infile, const char *outfile, int iterations, bool draw
 		return false;
 	}
 
-	return correct;
+	return true;
 }
 
-void TestDir(const char *indir, const char *outfile, int iterations, bool draw)
+void TestDir(const char *indir, const char *outfile, int iterations, bool draw, bool cliques)
 {
 	logger::Logger::Println(logger::LEVEL::INFO, "Testing all files in < ", indir, " > ...");
 
@@ -97,7 +119,7 @@ void TestDir(const char *indir, const char *outfile, int iterations, bool draw)
             continue;
 
         logger::Logger::Print(logger::LEVEL::INFO, "Testing file < ", file_name, " > ...");
-        bool test = TestFile(full_file_name.c_str(), outfile, iterations, draw);
+        bool test = TestFile(full_file_name.c_str(), outfile, iterations, draw, cliques);
         logger::Logger::Println(logger::LEVEL::INFO, (test ? " OKAY" : " INCORRECT"));
 
     } while (FindNextFile(dir, &file_data));

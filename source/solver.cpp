@@ -15,10 +15,11 @@ Solver::Solver()
 	objValue = 0;
 }
 
-Solver::Solver(const char *filename)
+Solver::Solver(const char *filename, bool use_cliques)
 {
-	graph = new Graph(filename);
+	graph = new Graph(filename, use_cliques);
 	scip = nullptr;
+	check_cliques = use_cliques;
 	objValue = 0;
 }
 
@@ -26,6 +27,11 @@ Solver::~Solver()
 {
 	if (graph)
 		delete graph;
+}
+
+Graph* Solver::GetGraph()
+{
+	return graph;
 }
 
 bool Solver::CheckInstance(void)
@@ -130,11 +136,31 @@ SCIP_RETCODE Solver::InitConstraints(SCIP_VAR **vars, bool print)
 		SCIP_CALL(SCIPcreateConsLinear(scip, &con, name, 0, NULL, NULL, 0, 1.0, TRUE, TRUE,
 			TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE));
 
-		SCIP_CALL(SCIPaddCoefLinear(scip, con, vars[it.one * MAX_SUB + (short)it.corner_one], 1.0));
-		SCIP_CALL(SCIPaddCoefLinear(scip, con, vars[it.two * MAX_SUB + (short)it.corner_two], 1.0));
+		SCIP_CALL(SCIPaddCoefLinear(scip, con, vars[it.from.node * MAX_SUB + (short)it.from.corner], 1.0));
+		SCIP_CALL(SCIPaddCoefLinear(scip, con, vars[it.to.node * MAX_SUB + (short)it.to.corner], 1.0));
 
 		SCIP_CALL(SCIPaddCons(scip, con));
 		SCIP_CALL(SCIPreleaseCons(scip, &con));
+	}
+
+	count = 0;
+	if (check_cliques)
+	{
+		for (auto it : graph->cliques)
+		{
+			SCIP_CONS *con;
+			(void)SCIPsnprintf(name, SCIP_MAXSTRLEN, "no#cliques#%d", count);
+			SCIP_CALL(SCIPcreateConsLinear(scip, &con, name, 0, NULL, NULL, 0, 1.0, TRUE, TRUE,
+				TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE));
+
+			for (Node node : it)
+			{
+				SCIP_CALL(SCIPaddCoefLinear(scip, con, vars[node.node * MAX_SUB + (short)node.corner], 1.0));
+			}
+
+			SCIP_CALL(SCIPaddCons(scip, con));
+			SCIP_CALL(SCIPreleaseCons(scip, &con));
+		}
 	}
 
 	if (print)
@@ -174,6 +200,8 @@ SCIP_RETCODE Solver::CopySolutionFree(SCIP_VAR **vars, bool print, bool write)
 
 	SCIPfreeBlockMemoryArray(scip, &vars, graph->NodeCount() * MAX_SUB);
 	SCIP_CALL(SCIPfree(&scip));
+
+	return SCIP_OKAY;
 }
 
 int Solver::Solve(const char *filename, bool print, bool write, bool draw, int draw_count)
@@ -203,7 +231,7 @@ int Solver::Solve(const char *filename, bool print, bool write, bool draw, int d
 
 	if (draw)
 	{
-		std::string draw_file = graph->instance.Filename() + "_sol_" + to_string(draw_count) + ".bmp";
+		std::string draw_file = string(graph->instance.Filename()) + "_sol_" + to_string(draw_count) + ".bmp";
 		graph->instance.WriteToBMP(draw_file.c_str());
 	}
 
